@@ -1,0 +1,80 @@
+networks:
+  shop:
+
+volumes:
+  node_modules:
+  postgres_data:
+
+services:
+  shopgl_client:
+    build:
+      context: ./client
+    environment:
+      SKIP_PREFLIGHT_CHECK: "true"
+    tty: true
+    volumes:
+      - ./client:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    networks:
+      - shop
+    depends_on:
+      - shopgl_server
+  shopgl_server:
+    build:
+      context: ./server
+    ports:
+      - "3080:3080"
+    environment:
+      - DB_HOST=db
+      - DB_USER=kadi
+      - DB_PASSWORD=kadi010203
+      - DB_NAME=ecomdb
+      - JWTSecret=hellotherebuddyhru
+    volumes:
+      - ./server:/usr/src/app
+    networks:
+      - shop
+    depends_on:
+      - db
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=kadi
+      - POSTGRES_PASSWORD=kadi010203
+      - POSTGRES_DB=ecomdb
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - shop
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kadi -d ecomdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  nginx:
+    restart: always
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - shopgl_client
+      - shopgl_server
+    ports:
+      - "3050:80"
+    networks:
+      - shop
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "8080:80"
+    networks:
+      - shop
+    depends_on:
+      - db
