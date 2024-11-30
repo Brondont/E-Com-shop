@@ -13,6 +13,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import LoadingPage from "./pages/user/LoadinPage";
 import { lightTheme, darkTheme } from "./theme";
 import Navbar from "./components/navbar/Navbar";
+import Footer from "./components/footer/Footer";
 
 export type UserProps = {
 }
@@ -96,33 +97,32 @@ const App: React.FC = () => {
   };
 
   return (
-    <Box>
-      <FeedbackProvider>
-        <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
-          <CssBaseline enableColorScheme />
-          <AuthContext.Provider
-            value={{
-              clientUser: user,
-              setClientUser: setClientUser,
-              handleLogout: handleLogout,
-              toggleDarkMode: toggleDarkMode,
-            }}
-          >
-            <Navbar isAuth={isAuth} handleLogout={handleLogout} />
-            <Box sx={{ position: "relative" }}>
-              <FeedbackAlert />
-              {isLoading ? (
-                <LoadingPage />
-              ) : (
-                <Routes>
-                  {getRoutes()}
-                </Routes>
-              )}
-            </Box>
-          </AuthContext.Provider>
-        </ThemeProvider>
-      </FeedbackProvider>
-    </Box>
+    <FeedbackProvider>
+      <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+        <CssBaseline enableColorScheme />
+        <AuthContext.Provider
+          value={{
+            clientUser: user,
+            setClientUser: setClientUser,
+            handleLogout: handleLogout,
+            toggleDarkMode: toggleDarkMode,
+          }}
+        >
+          <Navbar isAuth={isAuth} handleLogout={handleLogout} toggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
+          <Box sx={{ position: "relative", width: "100%" }}>
+            <FeedbackAlert />
+            {isLoading ? (
+              <LoadingPage />
+            ) : (
+              <Routes>
+                {getRoutes()}
+              </Routes>
+            )}
+          </Box>
+          <Footer />
+        </AuthContext.Provider>
+      </ThemeProvider>
+    </FeedbackProvider>
   );
 };
 

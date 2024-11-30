@@ -44,8 +44,7 @@ const lightThemeOptions: ThemeOptions = {
   palette: {
     mode: "light",
     primary: {
-      main: "#4A148C", // Deep Purple
-      dark: "#673AB7", // Royal Purple
+      main: "#673AB7", // Deep Purple
     },
     secondary: {
       main: "#D1C4E9", // Lavender
