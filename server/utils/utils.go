@@ -10,7 +10,7 @@ import (
 )
 
 type ErrorResponse struct {
-  Error string `json:"error"`
+	Error string `json:"error"`
 }
 
 func ParseJson(r *http.Request, payload any) error {
@@ -27,9 +27,9 @@ func WriteJson(w http.ResponseWriter, status int, v any) error {
 }
 
 func WriteError(w http.ResponseWriter, status int, err error) {
-  response := ErrorResponse{
-    Error: err.Error(),
-  }
+	response := ErrorResponse{
+		Error: err.Error(),
+	}
 	WriteJson(w, status, response)
 }
 

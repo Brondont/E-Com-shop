@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/Brondont/E-Com-shop/models"
 	"regexp"
+
+	"github.com/Brondont/E-Com-shop/models"
 )
 
 type InputValidationError struct {
@@ -14,10 +15,10 @@ type InputValidationError struct {
 }
 
 type ErrorResponse struct {
-	Error []InputValidationError `json:"error"` 
+	Error []InputValidationError `json:"error"`
 }
 
-
+// ValidateUserInput: Validates user sign up infromation
 func ValidateUserInput(payload models.User) []InputValidationError {
 	var errors []InputValidationError
 
@@ -48,6 +49,53 @@ func ValidateUserInput(payload models.User) []InputValidationError {
 			Value: "[hidden]",
 			Msg:   err.Error(),
 			Path:  "password",
+		})
+	}
+
+	return errors
+}
+
+// ValidateUserAddress: validates wether the payload fields are empty
+func ValidateUserAddress(payload models.Address) []InputValidationError {
+	var errors []InputValidationError
+
+	// Validate street
+	if payload.Street1 == "" {
+		errors = append(errors, InputValidationError{
+			Type:  "required",
+			Value: payload.Street1,
+			Msg:   "street address is required",
+			Path:  "street",
+		})
+	}
+
+	// Validate city
+	if payload.City == "" {
+		errors = append(errors, InputValidationError{
+			Type:  "required",
+			Value: payload.City,
+			Msg:   "city is required",
+			Path:  "city",
+		})
+	}
+
+	// Validate state
+	if payload.State == "" {
+		errors = append(errors, InputValidationError{
+			Type:  "required",
+			Value: payload.State,
+			Msg:   "state is required",
+			Path:  "state",
+		})
+	}
+
+	// Validate country
+	if payload.Country == "" {
+		errors = append(errors, InputValidationError{
+			Type:  "required",
+			Value: payload.Country,
+			Msg:   "country is required",
+			Path:  "country",
 		})
 	}
 

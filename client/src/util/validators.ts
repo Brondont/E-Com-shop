@@ -30,3 +30,6 @@ export const isEmail = (value: string) =>
 export const isGender = (value: string) => {
   return value === "Male" || value === "Female";
 };
+
+export const isPostalCode = (value: string): boolean => /^\d{5}(-\d{4})?$/.test(value);
+

@@ -7,7 +7,7 @@ const UserProfile: React.FC = () => {
   return (
     <>
       <MyBreadcrumbs />
-      <Box sx={{ p: 4, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", bgcolor: "background.default" }}>
+      <Box sx={{ p: 4, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh", bgcolor: "background.default" }}>
         <Card>
           <CardContent>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", mb: 4 }}>

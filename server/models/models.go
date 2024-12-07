@@ -47,7 +47,8 @@ type Address struct {
 	gorm.Model
 	UserID     uint   `json:"user_id"`
 	User       User   `json:"user" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Street     string `json:"street" gorm:"type:varchar(255);not null"`
+	Street1    string `json:"street1" gorm:"type:varchar(255);not null"`
+	Street2    string `json:"street2" gorm:"type:varchar(255)"`
 	City       string `json:"city" gorm:"type:varchar(100);not null"`
 	State      string `json:"state" gorm:"type:varchar(100);not null"`
 	PostalCode string `json:"postal_code" gorm:"type:varchar(20);not null"`

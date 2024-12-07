@@ -16,7 +16,7 @@ const FeedbackAlert: React.FC = () => {
           left: "50%",
           marginTop: "-100px", // Negative half of height.
           marginLeft: "-200px",
-          zIndex: 200,
+          zIndex: 99999,
         }}
       >
         <Alert severity={success ? "success" : "error"}>

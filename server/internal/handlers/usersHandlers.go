@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"gorm.io/gorm"
@@ -53,6 +54,48 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// PostAddress: Creates new address for a user
+func (h *Handler) PostAddress(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		err := errors.New("no user Id found")
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	var payload models.Address
+	if err := utils.ParseJson(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate input
+	if errs := middleware.ValidateUserAddress(payload); len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Println(err.Path)
+		}
+		utils.WriteInputValidationError(w, http.StatusConflict, errs)
+		return
+	}
+
+	// Set the user ID in the address object
+	payload.UserID = uint(userID)
+
+	// Save the address in the database
+	result := db.DB.DB.Create(&payload)
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	// Respond with the newly created address
+	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
+		"message": "Address created successfully",
+		"address": payload,
+	})
+}
+
 // PostLogin handles users login
 func (h *Handler) PostLogin(w http.ResponseWriter, r *http.Request) {
 	var payload models.User
@@ -81,12 +124,11 @@ func (h *Handler) PostLogin(w http.ResponseWriter, r *http.Request) {
 	if !utils.VerifyPassword(payload.Password, user.Password) {
 		// incorrect password
 		err := middleware.InputValidationError{
-			Type:  "invalid",
+			Type:  "Invalid",
 			Value: "[hidden]",
-			Msg:   "Invalid credentials",
-			Path:  "password",
+			Msg:   "Incorrect user credentials.",
+			Path:  "passwrod",
 		}
-
 		utils.WriteInputValidationError(w, http.StatusUnauthorized, err)
 		return
 	}
