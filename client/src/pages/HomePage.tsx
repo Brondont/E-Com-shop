@@ -48,15 +48,10 @@ const HomePage: React.FC = () => {
           <CategoriesCard title="" imageUrl="" />
           <CategoriesCard title="" imageUrl="" />
         </Box>
-        <Button variant="contained" size="large">Explore more categories</Button>
       </Box>
-      <Box id="Companies" sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: "30px", height: "90vh", width: "100vw", bgcolor: theme.background.damp, pt: 4, pb: 4 }} >
-        <Typography variant="h3" sx={{ color: theme.palette.primary.main }}>Popular Brands</Typography>
+      <Box id="Companies" sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: "30px", height: "90vh", width: "100vw", pt: 4, pb: 4 }} >
+        <Typography variant="h3" sx={{ color: "white" }}>Popular Brands</Typography>
         <Box sx={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
-          <CategoriesCard title="" imageUrl="" />
-          <CategoriesCard title="" imageUrl="" />
-          <CategoriesCard title="" imageUrl="" />
-          <CategoriesCard title="" imageUrl="" />
           <CategoriesCard title="" imageUrl="" />
           <CategoriesCard title="" imageUrl="" />
           <CategoriesCard title="" imageUrl="" />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Switch, AppBar, TextField, Box, Toolbar, Typography, Button, IconButton } from "@mui/material";
+import { Switch, AppBar, TextField, Box, Toolbar, Typography, Button, IconButton, Link } from "@mui/material";
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -85,7 +85,8 @@ const Navbar: React.FC<NavbarProps> = ({ isAuth, handleLogout, toggleDarkMode, i
     const handleScroll = () => {
       const navbarHeight = navbarRef.current?.offsetHeight || 0;
 
-      if (scrollY > navbarHeight) {
+
+      if (window.scrollY > navbarHeight) {
         setIsFixed(true);
       } else {
         setIsFixed(false);
@@ -108,7 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuth, handleLogout, toggleDarkMode, i
     return () => {
       window.removeEventListener("scroll", handleScroll);
     }
-  })
+  }, [lastScrollY])
 
   return (
     <>
@@ -145,7 +146,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuth, handleLogout, toggleDarkMode, i
               {isAuth ?
                 <>
                   <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Button variant="text" sx={{ color: "white" }}>kadi.steam@gmail.com</Button>
+                    <Button href="/account" variant="text" sx={{ color: "white" }}>kadi.steam@gmail.com</Button>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <Button onClick={handleLogout} startIcon={<LogoutIcon />} variant="text" sx={{ color: "white" }}>Log out</Button>
@@ -165,7 +166,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuth, handleLogout, toggleDarkMode, i
         </AppBar >
         <AppBar sx={{ position: "static", bgcolor: theme.background.damp }}>
           <Toolbar sx={{ display: "flex", justifyContent: "space-between", p: "6px" }}>
-            <Box sx={{ textAlign: "center", color: "black" }}>
+            <Box sx={{ textAlign: "center", color: "black" }} component={Link} href="/" underline="none">
               <Box display="flex" justifyContent="center">
                 <Typography variant="h5" sx={{ fontWeight: "bold" }}>
                   Byte

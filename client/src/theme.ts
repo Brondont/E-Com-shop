@@ -9,7 +9,7 @@ declare module "@mui/material/styles" {
       damp: string;
     };
   }
-  // allow configuration using `createTheme`
+  // Allow configuration using `createTheme`
   interface ThemeOptions {
     borderColor?: {
       primary?: string;
@@ -29,6 +29,13 @@ const baseTheme: ThemeOptions = {
     },
   },
   components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px", // Rounded buttons
+        },
+      },
+    },
     MuiList: {
       styleOverrides: {
         root: {
@@ -45,13 +52,31 @@ const lightThemeOptions: ThemeOptions = {
     mode: "light",
     primary: {
       main: "#673AB7", // Deep Purple
+      contrastText: "#FFFFFF", // White text on primary
     },
     secondary: {
       main: "#D1C4E9", // Lavender
+      contrastText: "#000", // Black text on secondary
     },
     background: {
       default: "#F5F5F5", // Light Gray for background
       paper: "#FFFFFF", // White for card/paper background
+    },
+    error: {
+      main: "#D32F2F", // Red
+      contrastText: "#FFFFFF", // White text on error
+    },
+    warning: {
+      main: "#FFA000", // Amber
+      contrastText: "#000000", // Black text on warning
+    },
+    info: {
+      main: "#0288D1", // Light Blue
+      contrastText: "#FFFFFF", // White text on info
+    },
+    success: {
+      main: "#388E3C", // Green
+      contrastText: "#FFFFFF", // White text on success
     },
   },
   background: {
@@ -68,14 +93,31 @@ const darkThemeOptions: ThemeOptions = {
     mode: "dark",
     primary: {
       main: "#7C4DFF", // Electric Violet
-      dark: "#4A148C", // Deep Purple
+      contrastText: "#FFFFFF", // White text on primary
     },
     secondary: {
       main: "#9575CD", // Lilac
+      contrastText: "#000000", // Black text on secondary
     },
     background: {
       default: "#303030", // Dark Gray for background
       paper: "#424242", // Slightly lighter for paper/cards
+    },
+    error: {
+      main: "#D32F2F", // Red
+      contrastText: "#FFFFFF", // White text on error
+    },
+    warning: {
+      main: "#FFA000", // Amber
+      contrastText: "#000000", // Black text on warning
+    },
+    info: {
+      main: "#0288D1", // Light Blue
+      contrastText: "#FFFFFF", // White text on info
+    },
+    success: {
+      main: "#388E3C", // Green
+      contrastText: "#FFFFFF", // White text on success
     },
   },
   background: {

@@ -1,22 +1,25 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Box, TextField } from "@mui/material";
+import { Box } from "@mui/material";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
-import { FeedbackProvider } from "./FeedbackAlertContext"; import FeedbackAlert from "./components/feedbackAlert/FeedbackAlert";
+import { FeedbackProvider } from "./FeedbackAlertContext";
+import FeedbackAlert from "./components/feedbackAlert/FeedbackAlert";
 import { AuthContext } from "./authContext";
 
 import HomePage from "./pages/HomePage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import LoadingPage from "./pages/user/LoadinPage";
+import ProfilePage from "./pages/user/ProfilePage";
+import AddressesPage from "./pages/user/AddressesPage";
 import { lightTheme, darkTheme } from "./theme";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
-export type UserProps = {
-}
+export type UserProps = {};
+
 
 const App: React.FC = () => {
   const [isAuth, setIsAuth] = useState<boolean>(false);
@@ -49,9 +52,7 @@ const App: React.FC = () => {
         Authorization: "Bearer " + token,
       },
     })
-      .then((res) => {
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((resData) => {
         if (resData.error) {
           throw new Error(resData.error);
@@ -65,7 +66,7 @@ const App: React.FC = () => {
         handleLogout();
         setIsLoading(false);
       });
-  }, [])
+  }, [apiUrl]);
 
   useEffect(() => {
     const token: string | null = localStorage.getItem("token");
@@ -78,19 +79,24 @@ const App: React.FC = () => {
     }
 
     handleLogin(token);
-
   }, [handleLogin]);
-
 
   const getRoutes = () => {
     return (
       <>
         <Route path="/" element={<HomePage />} />
-        {!isAuth &&
+        {isAuth && (
+          <>
+            <Route path="/account" element={<ProfilePage />} />
+            <Route path="/account/addresses" element={<AddressesPage />} />
+          </>
+        )}
+        {!isAuth && (
           <>
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage handleLogin={handleLogin} />} />
-          </>}
+          </>
+        )}
         <Route path="*" element={<Navigate to="/" replace />} />
       </>
     );
@@ -114,9 +120,7 @@ const App: React.FC = () => {
             {isLoading ? (
               <LoadingPage />
             ) : (
-              <Routes>
-                {getRoutes()}
-              </Routes>
+              <Routes>{getRoutes()}</Routes>
             )}
           </Box>
           <Footer />
@@ -127,3 +131,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

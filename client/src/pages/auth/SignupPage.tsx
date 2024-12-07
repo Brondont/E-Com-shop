@@ -221,7 +221,7 @@ const SignupPage: React.FC = () => {
           navigate("/login");
         }, 3000);
       })
-      .catch((err) => {
+      .catch(() => {
         setIsSending(false);
         showFeedback(
           "Something went wrong. Please try again in a moment.",

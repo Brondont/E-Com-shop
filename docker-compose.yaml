@@ -19,6 +19,7 @@ services:
       - shop
     depends_on:
       - shopgl_server
+    restart: always
   shopgl_server:
     build:
       context: ./server
@@ -36,6 +37,7 @@ services:
       - shop
     depends_on:
       - db
+    restart: always
   db:
     image: postgres:15-alpine
     environment:

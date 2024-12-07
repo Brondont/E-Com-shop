@@ -1,5 +1,5 @@
 import { OrbitControls, PerspectiveCamera, Stage } from "@react-three/drei";
-import { Canvas, useThree, extend } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import React, { Suspense, useState, useCallback } from "react";
 import { ComputerModel } from "./ComputerModel";
 
@@ -31,7 +31,6 @@ const ModelContainer: React.FC = () => {
           <Stage environment="night">
             <ComputerModel />
           </Stage>
-          <directionalLight color="white" position={[0, -5, 0]} />
           <PerspectiveCamera position={[-1, 0, 1.8]} zoom={0.7} makeDefault />
           <OrbitControls enableZoom={false} autoRotate />
         </Suspense>
