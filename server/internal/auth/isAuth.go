@@ -22,7 +22,7 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-      err := errors.New("Authorization header missing")
+			err := errors.New("authorization header missing")
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
 		}
@@ -30,7 +30,7 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 		// Check if the header has the Bearer prefix
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-      err := errors.New("Invalid token format")
+			err := errors.New("invalid token format")
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
 		}
@@ -45,7 +45,6 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 
 			return []byte(config.Envs.JWTSecret), nil
 		})
-
 		if err != nil {
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
@@ -53,7 +52,7 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		// Verify if token is valid
 		if !parsedToken.Valid {
-      err := errors.New("Invalid token")
+			err := errors.New("invalid token")
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
 		}
@@ -61,7 +60,7 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 		// Extract claims
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if !ok {
-      err := errors.New("Unable to extract jwt token info")
+			err := errors.New("unable to extract jwt token info")
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
 		}
@@ -69,7 +68,7 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 		// Extract userID and add it to request context
 		userID, ok := claims["userID"].(float64)
 		if !ok {
-      err := errors.New("Invalid user ID in token")
+			err := errors.New("invalid user ID in token")
 			utils.WriteError(w, http.StatusUnauthorized, err)
 			return
 		}
@@ -86,4 +85,3 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, extendedRequest)
 	}
 }
-

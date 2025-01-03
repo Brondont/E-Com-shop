@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 
 	"github.com/Brondont/E-Com-shop/models"
@@ -52,6 +53,19 @@ func ValidateUserInput(payload models.User) []InputValidationError {
 		})
 	}
 
+
+	// Phone number validation
+	re := regexp.MustCompile(`^\+?[1-9]\d{1,14}$`)
+	log.Print(payload.PhoneNumber)
+	if !re.MatchString(payload.PhoneNumber) {
+			errors = append(errors, InputValidationError{
+					Type:  "invalid",
+					Value: payload.PhoneNumber,
+					Msg:   "Invalid phone number submitted.",
+					Path:  "phone",
+			})
+	}
+
 	return errors
 }
 
@@ -66,26 +80,6 @@ func ValidateUserAddress(payload models.Address) []InputValidationError {
 			Value: payload.Street1,
 			Msg:   "street address is required",
 			Path:  "street",
-		})
-	}
-
-	// Validate city
-	if payload.City == "" {
-		errors = append(errors, InputValidationError{
-			Type:  "required",
-			Value: payload.City,
-			Msg:   "city is required",
-			Path:  "city",
-		})
-	}
-
-	// Validate state
-	if payload.State == "" {
-		errors = append(errors, InputValidationError{
-			Type:  "required",
-			Value: payload.State,
-			Msg:   "state is required",
-			Path:  "state",
 		})
 	}
 

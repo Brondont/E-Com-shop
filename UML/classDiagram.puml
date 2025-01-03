@@ -1,0 +1,113 @@
+@startuml class
+' Define Classes for E-commerce System
+
+' User class
+class User {
+    +userId: int
+    +username: string
+    +email: string
+    +password: string
+    +address: string
+    +login(): void
+    +register(): void
+    +updateProfile(): void
+    +trackOrder(): void
+    +viewProfile(): Profile
+}
+
+' Admin class (inherits from User)
+class Admin {
+    +adminId: int
+    +manageProducts(): void
+    +manageBrands(): void
+    +manageCatalog(): void
+    +manageImages(): void
+    +manage3DModels(): void
+}
+
+' Product class
+class Product {
+    +productId: int
+    +name: string
+    +price: float
+    +description: string
+    +category: string
+    +viewProduct(): void
+}
+
+' Cart class
+class Cart {
+    +cartId: int
+    +products: List<Product>
+    +totalPrice: float
+    +addProduct(product: Product): void
+    +removeProduct(product: Product): void
+    +checkout(): Order
+}
+
+' Order class
+class Order {
+    +orderId: int
+    +user: User
+    +orderItems: List<Product>
+    +totalPrice: float
+    +shippingAddress: string
+    +status: string
+    +checkout(): void
+    +calculateTotalPrice(): float
+    +processPayment(payment: Payment): void
+    +trackOrder(): void
+}
+
+' Payment class
+class Payment {
+    +paymentId: int
+    +order: Order
+    +paymentMethod: string
+    +status: string
+    +validateCard(): bool
+    +processPayment(): void
+}
+
+' Shipping class
+class Shipping {
+    +shippingId: int
+    +order: Order
+    +shippingAddress: string
+    +status: string
+    +handleShipping(): void
+}
+
+' Profile class (user profile management)
+class Profile {
+    +userId: int
+    +address: string
+    +email: string
+    +password: string
+    +updateAddress(newAddress: string): void
+    +updateEmail(newEmail: string): void
+    +updatePassword(newPassword: string): void
+}
+
+' Define Relationships
+
+User <|-- Admin : "inherits"
+User "1" --> "1" Cart : "has"
+User "1" --> "*" Order : "places"
+User "1" --> "1" Profile : "manages"
+Order "1" --> "*" Product : "contains"
+Order "1" --> "1" Payment : "uses"
+Order "1" --> "1" Shipping : "includes"
+Cart "1" --> "*" Product : "contains"
+Payment "1" --> "1" Order : "for"
+Shipping "1" --> "1" Order : "ships"
+Profile "1" --> "1" User : "belongs to"
+
+' Associations for method relationships
+User --> Profile : "view/update"
+Order --> Payment : "processes"
+Order --> Shipping : "triggers"
+Cart --> Order : "checkout creates"
+
+@enduml
+

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MuiTelInput, matchIsValidTel } from "mui-tel-input";
 import {
   Box,
   TextField,
@@ -50,7 +51,8 @@ type SignupForm = {
 };
 
 const SignupPage: React.FC = () => {
-  const [showPassword, setShowPassword] = useState<boolean>(false); const [signupForm, setSignupForm] = useState<SignupForm>({
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [signupForm, setSignupForm] = useState<SignupForm>({
     email: {
       value: "",
       valid: true,
@@ -62,6 +64,12 @@ const SignupPage: React.FC = () => {
       valid: true,
       error: "",
       validators: [isRequired, isLength({ min: 5, max: 30 })],
+    },
+    phone: {
+      value: "",
+      valid: true,
+      error: "",
+      validators: [isRequired],
     },
     password: {
       value: "",
@@ -82,6 +90,19 @@ const SignupPage: React.FC = () => {
 
   const apiUrl = process.env.REACT_APP_API_URL;
 
+  const handlePhoneChange = (value: string) => {
+    const isValid = matchIsValidTel(value);
+    setSignupForm((prev) => ({
+      ...prev,
+      phone: {
+        ...prev.phone,
+        value,
+        valid: isValid,
+        error: isValid ? "" : "Please enter a valid phone number",
+      },
+    }));
+  };
+
   const inputChangeHandler = (value: string, name: string) => {
     setSignupForm((prevState: SignupForm) => {
       const fieldConfig = prevState[name];
@@ -92,7 +113,6 @@ const SignupPage: React.FC = () => {
           isValid = isValid && validator(value);
           return validator;
         });
-        // updating confirm password for when changing password after putting confirmpassword
         if (name === "password" && prevState.confirmPassword.value) {
           prevState.confirmPassword.valid =
             value === prevState.confirmPassword.value;
@@ -112,7 +132,7 @@ const SignupPage: React.FC = () => {
             errorMessage = "E-mail invalid.";
             break;
           case "password":
-            errorMessage = "Password must be 8 charactesrs minimum.";
+            errorMessage = "Password must be 8 characters minimum.";
             break;
           case "confirmPassword":
             errorMessage = "Password does not match the one used above.";
@@ -123,7 +143,7 @@ const SignupPage: React.FC = () => {
           default:
             errorMessage = "invalid.";
         }
-      const updatedForm = {
+      return {
         ...prevState,
         [name]: {
           ...prevState[name],
@@ -132,7 +152,6 @@ const SignupPage: React.FC = () => {
           value: value,
         },
       };
-      return updatedForm;
     });
   };
 
@@ -174,6 +193,7 @@ const SignupPage: React.FC = () => {
       email: signupForm.email.value,
       username: signupForm.username.value,
       password: signupForm.password.value,
+      phoneNumber: signupForm.phone.value.replaceAll(" ", ""),
       confirmPassword: signupForm.confirmPassword.value,
     };
 
@@ -262,9 +282,7 @@ const SignupPage: React.FC = () => {
               gap: "30px",
             }}
           >
-            <Typography>
-              Create an account and get started messaging!
-            </Typography>
+            <Typography>Create an account and get started shopping!</Typography>
 
             <FormControl fullWidth>
               <TextField
@@ -276,8 +294,25 @@ const SignupPage: React.FC = () => {
                 error={!signupForm.email.valid}
                 helperText={signupForm.email.error || ""}
                 sx={{
-                  ...(isShake && !signupForm.email.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                  ...(isShake && !signupForm.email.valid
+                    ? { animation: `${shakeAnimation} 0.35s` }
+                    : {}),
                 }}
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <MuiTelInput
+                label="Phone number"
+                value={signupForm.phone.value}
+                onChange={handlePhoneChange}
+                error={!signupForm.phone.valid}
+                helperText={signupForm.phone.error}
+                sx={{
+                  ...(isShake && !signupForm.phone.valid
+                    ? { animation: `${shakeAnimation} 0.35s` }
+                    : {}),
+                }}
+                defaultCountry="US"
               />
             </FormControl>
             <FormControl fullWidth>
@@ -290,14 +325,18 @@ const SignupPage: React.FC = () => {
                 error={!signupForm.username.valid}
                 helperText={signupForm.username.error || ""}
                 sx={{
-                  ...(isShake && !signupForm.username.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                  ...(isShake && !signupForm.username.valid
+                    ? { animation: `${shakeAnimation} 0.35s` }
+                    : {}),
                 }}
               />
             </FormControl>
             <FormControl
               fullWidth
               sx={{
-                ...(isShake && !signupForm.password.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                ...(isShake && !signupForm.password.valid
+                  ? { animation: `${shakeAnimation} 0.35s` }
+                  : {}),
               }}
             >
               <InputLabel
@@ -330,7 +369,9 @@ const SignupPage: React.FC = () => {
             <FormControl
               fullWidth
               sx={{
-                ...(isShake && !signupForm.confirmPassword.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                ...(isShake && !signupForm.confirmPassword.valid
+                  ? { animation: `${shakeAnimation} 0.35s` }
+                  : {}),
               }}
             >
               <InputLabel

@@ -130,4 +130,3 @@ const darkThemeOptions: ThemeOptions = {
 
 export const lightTheme = createTheme(lightThemeOptions);
 export const darkTheme = createTheme(darkThemeOptions);
-

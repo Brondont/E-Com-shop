@@ -1,5 +1,6 @@
 networks:
   shop:
+    driver: bridge
 
 volumes:
   node_modules:
@@ -10,7 +11,8 @@ services:
     build:
       context: ./client
     environment:
-      SKIP_PREFLIGHT_CHECK: "true"
+      - SKIP_PREFLIGHT_CHECK="true"
+      - REACT_APP_API_URL=http://localhost:3080/api/v1
     tty: true
     volumes:
       - ./client:/usr/src/app
@@ -20,6 +22,8 @@ services:
     depends_on:
       - shopgl_server
     restart: always
+    ports:
+      - "3000:3000"
   shopgl_server:
     build:
       context: ./server
@@ -56,18 +60,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  nginx:
-    restart: always
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    depends_on:
-      - shopgl_client
-      - shopgl_server
-    ports:
-      - "3050:80"
-    networks:
-      - shop
   pgadmin:
     image: dpage/pgadmin4
     restart: always

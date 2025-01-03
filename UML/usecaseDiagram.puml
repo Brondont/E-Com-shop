@@ -1,0 +1,105 @@
+@startuml
+left to right direction
+
+' Define Actors
+actor Admin
+actor "Bank Payment Service" as BPS
+actor "Shipping Agency" as SA
+actor User
+
+' Grouping Use Cases into Logical Packages
+package "E-Commerce System" {
+  ' User Interactions Section
+  package "User Interactions" {
+    usecase "User Registration" as UserRegistration
+    usecase "User Login" as UserLogin
+    usecase "View Products" as ViewProducts
+    usecase "Manage Cart" as ManageProductsInCart
+    usecase "Track Order" as TrackOrder
+    usecase "View Profile" as ViewProfile
+    usecase "Update Address" as UpdateAddress
+    usecase "Update Email" as UpdateEmail
+    usecase "Update Password" as UpdatePassword
+  }
+  
+  ' Admin Management Section
+  package "Admin Management" {
+    usecase "Manage Products" as ManageProducts
+    usecase "Manage Brands" as ManageBrands
+    usecase "Manage Catalog" as ManageCatalog
+    usecase "Manage 3D Models" as Manage3DModels
+    usecase "Manage Images" as ManageImages
+  }
+  
+  ' Checkout and Payment Section
+  package "Checkout and Payment" {
+    usecase "Checkout Order" as CheckoutOrder
+    usecase "Calculate Total Price" as CalculateTotalPrice
+    usecase "Validate Card" as ValidateCard
+    usecase "Process Payment" as ProcessPayment
+  }
+  
+  ' Authentication Section
+  package "Authentication" {
+    usecase "User Authentication" as UserAuthentication
+    usecase "Send Inactivity Email" as SendInactivityEmail
+    usecase "Reactivate Account" as ReactivateAccount
+  }
+  
+  ' Shipping Section
+  package "Shipping" {
+    usecase "Handle Shipping" as HandleShipping
+  }
+}
+
+' Define Interactions and Relationships
+' Admin Interactions
+Admin --> ManageProducts
+Admin --> ManageBrands
+Admin --> ManageCatalog
+Admin -[norank]-> UserAuthentication
+
+' Admin Use Case Relationships (extends and includes)
+ManageProducts <.. Manage3DModels : <<extend>>
+ManageProducts <.. ManageImages : <<extend>>
+ManageBrands <.. ManageImages : <<extend>>
+ManageCatalog <.. ManageImages : <<extend>>
+
+' User Interactions
+User --> UserRegistration
+User -[norank]-> UserLogin
+User --> ViewProducts
+User --> ManageProductsInCart
+User --> UserAuthentication
+User --> ViewProfile
+
+' View Profile Extensions
+ViewProfile <.. UpdateAddress : <<extend>>
+ViewProfile <.. UpdateEmail : <<extend>>
+ViewProfile <.. UpdatePassword : <<extend>>
+
+' User Login includes View Profile
+UserLogin <.. ViewProfile : <<include>>
+UserLogin <.. TrackOrder : <<include>>
+
+' Authentication and Checkout Flow
+UserAuthentication ..> CheckoutOrder : <<include>>
+UserAuthentication ..> UserLogin : <<include>> 
+CheckoutOrder ..> CalculateTotalPrice : <<include>>
+CheckoutOrder ..> ProcessPayment : <<include>>
+
+' Payment Process
+BPS --> ValidateCard
+BPS --> ProcessPayment
+ValidateCard ..> ProcessPayment : <<include>>
+
+' Shipping Process
+ProcessPayment -.> HandleShipping
+SA --> HandleShipping
+
+' Triggered after 40 days of inactivity
+SendInactivityEmail ....> User : <<extend>>
+
+' User Reactivation
+UserLogin ..> ReactivateAccount : <<include>>
+@enduml

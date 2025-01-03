@@ -19,7 +19,16 @@ const CategoriesCard: React.FC<CategoriesCardProps> = ({ title, imageUrl }) => {
         boxShadow: "0px 4px 4px 0px #00000040",
       }}
     >
-      <CardContent sx={{ height: "100%", width: "100%", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+      <CardContent
+        sx={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+        }}
+      >
         {title && imageUrl ? (
           <>
             <img src={imageUrl} alt="" />

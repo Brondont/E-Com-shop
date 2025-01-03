@@ -1,0 +1,40 @@
+@startuml
+actor User
+participant "Frontend" as FE
+participant "Backend" as BE
+participant "Database" as DB
+participant "Payment Gateway" as PG
+
+User -> FE: Log in
+FE -> BE: Validate user credentials
+BE -> DB: Query user by email
+DB --> BE: Return user details
+BE --> FE: Login success or failure
+
+User -> FE: Add product to cart
+FE -> BE: Add product to cart
+BE -> DB: Update cart with product and quantity
+DB --> BE: Confirm cart update
+BE --> FE: Cart updated
+
+User -> FE: Proceed to checkout
+FE -> BE: Request product availability
+BE -> DB: Check stock for each product
+DB --> BE: Return stock status
+BE --> FE: Stock confirmed or error
+
+User -> FE: Enter payment details
+FE -> BE: Send payment details
+BE -> PG: Validate and process payment
+PG --> BE: Payment success or failure
+BE -> DB: Update order status if payment successful
+DB --> BE: Confirm order update
+BE --> FE: Order confirmation or payment error
+
+User -> FE: View order confirmation
+FE -> BE: Request order details
+BE -> DB: Retrieve order information
+DB --> BE: Return order details
+BE --> FE: Display order confirmation
+@enduml
+

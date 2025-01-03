@@ -1,0 +1,32 @@
+@startuml activity
+start
+:User logs in;
+if (Is login valid?) then (yes)
+  :Display user dashboard;
+else (no)
+  :Show error message;
+  stop
+endif
+
+:User adds product(s) to cart;
+if (Are products in stock?) then (yes)
+  :Proceed to checkout;
+else (no)
+  :Display out-of-stock message;
+  stop
+endif
+
+:User enters payment details;
+if (Are payment details valid?) then (yes)
+  :Process payment;
+  :Generate order confirmation;
+else (no)
+  :Show payment error message;
+  stop
+endif
+
+:Send email and SMS notifications;
+:Update order status to "Processing";
+stop
+@enduml
+

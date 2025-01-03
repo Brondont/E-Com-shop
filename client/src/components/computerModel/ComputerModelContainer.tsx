@@ -40,4 +40,3 @@ const ModelContainer: React.FC = () => {
 };
 
 export default ModelContainer;
-

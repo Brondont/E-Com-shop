@@ -1,7 +1,14 @@
 import React, { useState } from "react";
-import { Box, TextField, FormControl, Typography, keyframes } from "@mui/material";
+import {
+  Box,
+  TextField,
+  FormControl,
+  Typography,
+  keyframes,
+} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useFeedback } from "../../FeedbackAlertContext";
+import { useNavigate } from "react-router-dom";
 
 const shakeAnimation = keyframes`
   0% { transform: translateX(0); }
@@ -47,6 +54,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [isShake, setIsShake] = useState<boolean>(false);
   const { showFeedback } = useFeedback();
+  const navigate = useNavigate();
 
   const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -102,6 +110,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
             statusCode === 401
           ) {
             const updatedForm = { ...signupForm };
+
+            console.log(resData);
 
             // update error message for each form field if the error exists for that field
             error.forEach((err: ServerFormError) => {
@@ -181,12 +191,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
                 error={!signupForm.email.valid}
                 helperText={signupForm.email.error || ""}
                 sx={{
-                  ...(isShake && !signupForm.email.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                  ...(isShake && !signupForm.email.valid
+                    ? { animation: `${shakeAnimation} 0.35s` }
+                    : {}),
                 }}
               />
             </FormControl>
             <FormControl fullWidth>
-              <TextField type="password"
+              <TextField
+                type="password"
                 value={signupForm.password.value}
                 label="Password"
                 error={!signupForm.password.valid}
@@ -195,10 +208,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
                   inputChangeHandler(event.target.value, "password");
                 }}
                 sx={{
-                  ...(isShake && !signupForm.password.valid ? { animation: `${shakeAnimation} 0.35s` } : {}),
+                  ...(isShake && !signupForm.password.valid
+                    ? { animation: `${shakeAnimation} 0.35s` }
+                    : {}),
                 }}
               />
-
             </FormControl>
 
             <LoadingButton

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Brondont/E-Com-shop/internal/routes"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -28,7 +29,15 @@ func (s *APIServer) Run() error {
 	// set up routes
 	routes.SetupRoutes(subrouter)
 
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, 
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true, 
+		Debug:            true, 
+	}).Handler(router)
+
 	log.Println("Server is on !", s.addr)
 
-	return http.ListenAndServe(s.addr, router)
+	return http.ListenAndServe(s.addr, corsHandler)
 }

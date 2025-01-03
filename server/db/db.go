@@ -31,7 +31,6 @@ func ConnectDB() {
 	}
 
 	log.Println("Server connected to database")
-	db.Logger = logger.Default.LogMode(logger.Info)
 
 	log.Println("Running migrations")
 	db.AutoMigrate(
@@ -43,6 +42,8 @@ func ConnectDB() {
 		&models.Order{},
 		&models.OrderItem{},
 		&models.CartItem{},
+		&models.Inventory{},
+		&models.Variant{},
 		&models.Image{},
 	)
 	DB = DBInstance{
