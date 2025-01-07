@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
+import React, { ReactElement, useState, useCallback, useEffect } from "react";
 import {
   Box,
-  Drawer as MuiDrawer,
+  Drawer,
   List,
   ListItem,
   ListItemButton,
@@ -14,55 +13,43 @@ import {
   Divider,
   useTheme,
   Tooltip,
-  ListSubheader,
   Button,
+  Collapse,
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import PeopleIcon from "@mui/icons-material/People";
-import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
+import { UserProps } from "../../../pages/user/ProfilePage";
 
-const drawerWidth = 260;
+const DRAWER_WIDTH = 260;
+const COLLAPSED_DRAWER_WIDTH = 64;
+const TRANSITION_DURATION = 200;
 
-const Drawer = styled(MuiDrawer, {
+const StyledDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== "open",
 })(({ theme, open }) => ({
-  width: open ? drawerWidth : theme.spacing(7),
+  width: open ? DRAWER_WIDTH : COLLAPSED_DRAWER_WIDTH,
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
-  ...(open && {
-    "& .MuiDrawer-paper": {
-      width: drawerWidth,
-      transition: theme.transitions.create("width", {
-        easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.enteringScreen,
-      }),
-      backgroundColor: theme.palette.background.default,
-      overflowX: "hidden",
-    },
-  }),
-  ...(!open && {
-    "& .MuiDrawer-paper": {
-      transition: theme.transitions.create("width", {
-        easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.leavingScreen,
-      }),
-      overflowX: "hidden",
-      backgroundColor: theme.palette.background.default,
-      [theme.breakpoints.up("sm")]: {
-        width: theme.spacing(8),
-      },
-    },
-  }),
+  "& .MuiDrawer-paper": {
+    width: open ? DRAWER_WIDTH : COLLAPSED_DRAWER_WIDTH,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: TRANSITION_DURATION,
+    }),
+    backgroundColor: theme.palette.background.default,
+    overflowX: "hidden",
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
 }));
 
-const DrawerHeader = styled("div")(({ theme }) => ({
+const DrawerHeader = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
@@ -75,13 +62,16 @@ const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   "&.Mui-selected": {
     backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
+    color: theme.palette.common.white,
     "&:hover": {
       backgroundColor: theme.palette.primary.dark,
     },
     "& .MuiListItemIcon-root": {
-      color: theme.palette.primary.contrastText,
+      color: "inherit",
     },
+  },
+  "&:hover": {
+    backgroundColor: theme.palette.action.hover,
   },
 }));
 
@@ -94,19 +84,18 @@ const UserSection = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.divider}`,
 }));
 
-const sections = [
-  { name: "Dashboard", path: "dashboard", icon: <DashboardIcon /> },
-  { name: "Products", path: "products", icon: <ShoppingCartIcon /> },
-  { name: "Users", path: "users", icon: <PeopleIcon /> },
-  { name: "Settings", path: "settings", icon: <SettingsIcon /> },
-];
-
-interface UserProps {
-  email: string;
+export interface Section {
+  name: string;
+  path: string;
+  icon: ReactElement;
+  subSection?: {
+    sections: Section[];
+  };
 }
 
 interface SidebarProps {
   onSelect: (section: string) => void;
+  sections: Section[];
   selectedSection: string;
   user: UserProps;
   handleLogout: () => void;
@@ -114,42 +103,134 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({
   onSelect,
+  sections,
   selectedSection,
   user,
   handleLogout,
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const navigate = useNavigate();
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const theme = useTheme();
 
-  const toggleDrawer = () => {
-    setOpen(!open);
-  };
+  // Find and expand the section containing the selected item on mount
+  useEffect(() => {
+    if (selectedSection) {
+      sections.forEach((section) => {
+        if (
+          section.subSection?.sections.some(
+            (sub) => sub.path === selectedSection
+          )
+        ) {
+          if (!expandedSections.includes(section.path)) {
+            setExpandedSections((prev) => [...prev, section.path]);
+          }
+        }
+      });
+    }
+  }, [selectedSection, sections]);
 
-  const handleHomeClick = () => {
-    navigate("/");
-  };
+  const toggleDrawer = useCallback(() => {
+    setOpen((prev) => !prev);
+  }, []);
+
+  const toggleSection = useCallback((sectionPath: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionPath)
+        ? prev.filter((path) => path !== sectionPath)
+        : [...prev, sectionPath]
+    );
+  }, []);
+
+  const handleSectionClick = useCallback(
+    (section: Section) => {
+      if (section.subSection) {
+        toggleSection(section.path);
+      } else {
+        onSelect(section.path);
+      }
+    },
+    [onSelect, toggleSection]
+  );
+
+  const renderListItem = (section: Section, isSubSection = false) => (
+    <ListItem
+      disablePadding
+      sx={{
+        display: "block",
+        pl: isSubSection && open ? 2 : 0,
+      }}
+    >
+      <Tooltip title={!open ? section.name : ""} placement="right" arrow>
+        <StyledListItemButton
+          selected={section.path === selectedSection}
+          onClick={() => handleSectionClick(section)}
+          sx={{
+            minHeight: 48,
+            justifyContent: open ? "initial" : "center",
+            px: 2.5,
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: 0,
+              mr: open ? 2 : "auto",
+              justifyContent: "center",
+            }}
+          >
+            {section.icon}
+          </ListItemIcon>
+          <ListItemText
+            primary={section.name}
+            sx={{
+              opacity: open ? 1 : 0,
+              "& .MuiTypography-root": {
+                fontWeight: 500,
+              },
+            }}
+          />
+          {section.subSection && open && (
+            <Box component="span" sx={{ ml: "auto" }}>
+              {expandedSections.includes(section.path) ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              )}
+            </Box>
+          )}
+        </StyledListItemButton>
+      </Tooltip>
+
+      {section.subSection && (
+        <Collapse
+          in={open && expandedSections.includes(section.path)}
+          timeout="auto"
+        >
+          <List disablePadding>
+            {section.subSection.sections.map((subSection) =>
+              renderListItem(subSection, true)
+            )}
+          </List>
+        </Collapse>
+      )}
+    </ListItem>
+  );
 
   return (
-    <Drawer variant="permanent" open={open}>
+    <StyledDrawer variant="permanent" open={open}>
       <DrawerHeader>
-        <IconButton
-          onClick={toggleDrawer}
-          sx={{ color: theme.palette.text.primary }}
-        >
+        <IconButton onClick={toggleDrawer}>
           {open ? <MenuOpenIcon /> : <MenuIcon />}
         </IconButton>
       </DrawerHeader>
 
+      <Divider />
+
       <List sx={{ px: 1 }}>
-        <ListItem disablePadding sx={{ mb: 1 }}>
-          <Tooltip
-            title={!open ? "Return to Home" : ""}
-            placement="right"
-            arrow
-          >
+        <ListItem disablePadding>
+          <Tooltip title={!open ? "Home" : ""} placement="right" arrow>
             <StyledListItemButton
-              onClick={handleHomeClick}
+              onClick={() => navigate("/")}
               sx={{
                 minHeight: 48,
                 justifyContent: open ? "initial" : "center",
@@ -161,13 +242,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                   minWidth: 0,
                   mr: open ? 2 : "auto",
                   justifyContent: "center",
-                  color: "inherit",
                 }}
               >
                 <HomeIcon />
               </ListItemIcon>
               <ListItemText
-                primary="Return to Home"
+                primary="Home"
                 sx={{
                   opacity: open ? 1 : 0,
                   "& .MuiTypography-root": {
@@ -178,78 +258,16 @@ const Sidebar: React.FC<SidebarProps> = ({
             </StyledListItemButton>
           </Tooltip>
         </ListItem>
+
         <Divider sx={{ my: 1 }} />
 
-        {sections.map((section) => (
-          <>
-            <ListItem key={section.path} disablePadding>
-              <Tooltip
-                title={!open ? section.name : ""}
-                placement="right"
-                arrow
-              >
-                <StyledListItemButton
-                  selected={section.path === selectedSection}
-                  onClick={() => onSelect(section.path)}
-                  sx={{
-                    minHeight: 48,
-                    justifyContent: open ? "initial" : "center",
-                    px: 2.5,
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 2 : "auto",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {section.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={section.name}
-                    sx={{
-                      opacity: open ? 1 : 0,
-                      "& .MuiTypography-root": {
-                        fontWeight: 500,
-                      },
-                    }}
-                  />
-                </StyledListItemButton>
-              </Tooltip>
-            </ListItem>
-            {section.name === "Dashboard" && open && (
-              <ListSubheader
-                sx={{
-                  backgroundColor: "transparent",
-                  fontSize: "0.75rem",
-                  letterSpacing: "0.1em",
-                  py: 1,
-                }}
-              >
-                MANAGE
-              </ListSubheader>
-            )}
-          </>
-        ))}
+        {sections.map((section) => renderListItem(section))}
       </List>
 
       {user && (
         <UserSection>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Avatar
                 sx={{
                   bgcolor: theme.palette.primary.main,
@@ -274,7 +292,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </Box>
               )}
             </Box>
-            {open && (
+
+            {open ? (
               <Button
                 variant="outlined"
                 startIcon={<LogoutIcon />}
@@ -285,10 +304,13 @@ const Sidebar: React.FC<SidebarProps> = ({
               >
                 Logout
               </Button>
-            )}
-            {!open && (
+            ) : (
               <Tooltip title="Logout" placement="right" arrow>
-                <IconButton onClick={handleLogout} size="small">
+                <IconButton
+                  onClick={handleLogout}
+                  size="small"
+                  sx={{ width: "100%" }}
+                >
                   <LogoutIcon color="error" />
                 </IconButton>
               </Tooltip>
@@ -296,7 +318,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Box>
         </UserSection>
       )}
-    </Drawer>
+    </StyledDrawer>
   );
 };
 

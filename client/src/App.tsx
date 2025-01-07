@@ -13,13 +13,15 @@ import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import LoadingPage from "./pages/user/LoadingPage";
 import ProfilePage from "./pages/user/ProfilePage";
-import Adminpage from "./pages/admin/AdminPage";
+import AdminPage from "./pages/admin/AdminPage";
 import AddressesPage from "./pages/user/AddressesPage";
 import { lightTheme, darkTheme } from "./theme";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
 import { UserProps } from "./pages/user/ProfilePage";
+import ProductSearch from "./pages/user/ProductSearchPage";
+import ProductPage from "./pages/user/ProductPage";
 
 const App: React.FC = () => {
   const [isAuth, setIsAuth] = useState<boolean>(false);
@@ -89,11 +91,13 @@ const App: React.FC = () => {
     return (
       <>
         <Route path="/" element={<HomePage />} />
+        <Route path="/search" element={<ProductSearch />} />
+        <Route path="/search/product/:productID" element={<ProductPage />} />
         {isAuth && user && user.isAdmin && (
           <>
             <Route
               path="/admin/*"
-              element={<Adminpage handleLogout={handleLogout} user={user} />}
+              element={<AdminPage handleLogout={handleLogout} user={user} />}
             />
           </>
         )}

@@ -22,7 +22,7 @@ type ErrorResponse struct {
 }
 
 type MultiPartFormData struct {
-	Fields map[string]string
+	Fields map[string][]string
 	File   *multipart.FileHeader
 	Files  []*multipart.FileHeader
 }
@@ -80,13 +80,13 @@ func ParseMultipartForm(r *http.Request, maxMemory int64) (*MultiPartFormData, e
 	}
 
 	data := &MultiPartFormData{
-		Fields: make(map[string]string),
+		Fields: make(map[string][]string), // Use a slice to store multiple values
 	}
 
 	// Get form fields - handles both Form and PostForm
 	for key, values := range r.MultipartForm.Value {
 		if len(values) > 0 {
-			data.Fields[key] = values[0]
+			data.Fields[key] = values
 		}
 	}
 
@@ -158,5 +158,5 @@ func SaveUploadedFile(file *multipart.FileHeader, destDir string) (string, error
 	}
 
 	// Return the path to the saved file
-	return filePath, nil
+	return destDir + "/" + filename, nil
 }

@@ -37,6 +37,7 @@ services:
       - JWTSecret=hellotherebuddyhru
     volumes:
       - ./server:/usr/src/app
+      - ./server/public:/usr/src/app/public
     networks:
       - shop
     depends_on:

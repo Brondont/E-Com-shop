@@ -14,6 +14,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CallIcon from "@mui/icons-material/Call";
+import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useTheme } from "@mui/material";
@@ -167,6 +168,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     sx={{ display: "flex", alignItems: "center", gap: "5px" }}
                   >
                     <Button
+                      startIcon={<PersonIcon />}
                       href="/account"
                       variant="text"
                       sx={{ color: "white" }}
@@ -248,7 +250,9 @@ const Navbar: React.FC<NavbarProps> = ({
                 variant="outlined"
                 fullWidth
               />
-              <Button variant="contained">Search</Button>
+              <Button href="/search" variant="contained">
+                Search
+              </Button>
             </Box>
             <Box>
               <IconButton>

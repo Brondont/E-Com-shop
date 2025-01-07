@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 
 // Define the shape of the context
 interface FeedbackContextType {
@@ -34,12 +40,14 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   const [feedback, setFeedback] = useState<string>("");
   const [success, setSuccess] = useState<boolean>(false);
 
-  const showFeedback = (message: string, success: boolean) => {
+  const showFeedback = useCallback((message: string, success: boolean) => {
     setAlertIsOn(true);
     setFeedback(message);
     setSuccess(success);
-    setTimeout(() => setAlertIsOn(false), 2500); // allows slide out animation to play
-  };
+    const timeoutID = setTimeout(() => setAlertIsOn(false), 2500); // allows slide out animation to play
+
+    return () => clearTimeout(timeoutID); // Cleanup timeout on unmount
+  }, []);
 
   return (
     <FeedbackContext.Provider

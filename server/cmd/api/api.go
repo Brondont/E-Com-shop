@@ -28,13 +28,14 @@ func (s *APIServer) Run() error {
 
 	// set up routes
 	routes.SetupRoutes(subrouter)
+	routes.SetupStaticRoutes(router)
 
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, 
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true, 
-		Debug:            true, 
+		AllowCredentials: true,
+		Debug:            true,
 	}).Handler(router)
 
 	log.Println("Server is on !", s.addr)
