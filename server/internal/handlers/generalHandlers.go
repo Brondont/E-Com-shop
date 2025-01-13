@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -39,7 +40,7 @@ func (h *GeneralHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 
 	result := query.Find(&categories)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting categories, try again"))
 		return
 	}
 
@@ -67,7 +68,7 @@ func (h *GeneralHandler) GetManufacturers(w http.ResponseWriter, r *http.Request
 
 	result := query.Find(&manufacturers)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting manufacturers, try again"))
 		return
 	}
 
@@ -84,7 +85,7 @@ func (h *GeneralHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	var productPayload models.Product
 	result := db.DB.DB.Preload("Variants").Preload("Variants.Images").Preload("Variants.Inventory").Preload("Image").Where("ID = ?", productID).Find(&productPayload)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with fetching products, try again"))
 		return
 	}
 
@@ -96,36 +97,49 @@ func (h *GeneralHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *GeneralHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	pageItemCount, _ := strconv.Atoi(r.URL.Query().Get("pageItemCount"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	search := r.URL.Query().Get("search")
+	// categoriesIDs := r.URL.Query().Get("categoriesIDs")
+	// manufacturersIDs := r.URL.Query().Get("manufacturersIDs")
 
 	// Default values for pagination
 	if page < 1 {
 		page = 1
 	}
-	if pageItemCount < 1 {
-		pageItemCount = 10 // Default page size
+	if limit < 1 {
+		limit = 10 // Default page size
 	}
 
 	var products []models.Product
 	var totalProducts int64
 
 	// Calculate offset
-	offset := (page - 1) * pageItemCount
+	offset := (page - 1) * limit
+	// Initialize the base query
+
+	baseQuery := db.DB.DB.Model(&models.Product{}).Preload("Image").Preload("Category").Preload("Manufacturer")
+
+	// Apply search filter if provided
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		baseQuery = baseQuery.Where(
+			"name LIKE ?", searchPattern,
+		)
+	}
 
 	// Fetch total number of products
 	db.DB.DB.Model(&models.Product{}).Count(&totalProducts)
 
 	// Fetch paginated products
-	result := db.DB.DB.Preload("Image").Preload("Category").Preload("Manufacturer").
-		Offset(offset).Limit(pageItemCount).Find(&products)
+	result := baseQuery.Offset(offset).Limit(limit).Find(&products)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting products, try again"))
 		return
 	}
 
 	// Calculate total pages
-	totalPages := int(totalProducts) / pageItemCount
-	if int(totalProducts)%pageItemCount != 0 {
+	totalPages := int(totalProducts) / limit
+	if int(totalProducts)%limit != 0 {
 		totalPages++
 	}
 
@@ -136,7 +150,7 @@ func (h *GeneralHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 		"currentPage":  page,
 		"totalPages":   totalPages,
 		"totalItems":   totalProducts,
-		"itemsPerPage": pageItemCount,
+		"itemsPerPage": limit,
 	})
 }
 
@@ -161,7 +175,7 @@ func (h *GeneralHandler) GetVariants(w http.ResponseWriter, r *http.Request) {
 
 	result := query.Find(&variants)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting variants, try again"))
 		return
 	}
 

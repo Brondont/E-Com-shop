@@ -66,6 +66,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Typography variant="h6" gutterBottom>
               {product.name}
             </Typography>
+            <Typography variant="body2">
+              <div
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              ></div>
+            </Typography>
           </>
         )}
       </CardContent>

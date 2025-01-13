@@ -4,31 +4,24 @@ import {
   Avatar,
   Typography,
   Button,
-  IconButton,
-  Tooltip,
   Card,
-  Container,
   useTheme,
   useMediaQuery,
   Divider,
 } from "@mui/material";
-import {
-  Email,
-  Edit,
-  CalendarToday,
-  LocationOn,
-  FormatAlignJustify,
-} from "@mui/icons-material";
+import { Email, Edit, CalendarToday, LocationOn } from "@mui/icons-material";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import MyBreadcrumbs from "../../components/myBreadcrumbs/MyBreadcrumbs";
 
 export interface UserProps {
-  id: number;
+  ID: number;
+  CreatedAt: string;
+  UpdatedAt: string;
+  DeletedAt: string | null;
   username: string;
   email: string;
   phoneNumber: string;
-  CreatedAt: string;
   isAdmin: boolean;
 }
 

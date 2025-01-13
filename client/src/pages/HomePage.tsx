@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Box, Button, Typography, useTheme, Container } from "@mui/material";
-import ModelContainer from "../components/computerModel/ComputerModelContainer";
 import CategoryCard from "../components/cards/categoriesCard/CategoriesCard";
 import ManufacturerCard from "../components/cards/manufacturersCard/ManufacturersCard";
 import {
@@ -8,6 +7,7 @@ import {
   Manufacturer,
 } from "../components/admin/products/BaseProductCreation";
 import CardGrid from "../components/cards/cardGrid/CardGrid";
+import Scene from "../components/modelViewer/ModelViewer";
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
@@ -72,9 +72,9 @@ const HomePage: React.FC = () => {
           flexDirection: { xs: "column", md: "row" },
           alignItems: "center",
           justifyContent: "space-between",
-          minHeight: "90vh",
+          minHeight: "70vh",
           width: "100%",
-          p: { xs: 3, md: 10 },
+          px: { xs: 2, md: 8 },
           bgcolor: theme.palette.primary.main,
           color: "white",
         }}
@@ -135,15 +135,15 @@ const HomePage: React.FC = () => {
 
         <Box
           sx={{
-            flex: 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            height: "80vh",
-            width: { xs: "100%", md: "100" },
+            width: "100%",
             mt: { xs: 4, md: 0 },
           }}
-        ></Box>
+        >
+          <Scene showLoading={false} modelPath="/models/Computer.glb" />
+        </Box>
       </Box>
 
       <Box
@@ -171,7 +171,6 @@ const HomePage: React.FC = () => {
         />
       </Box>
 
-      {/* Manufacturers Section */}
       <Box
         id="Manufacturers"
         sx={{

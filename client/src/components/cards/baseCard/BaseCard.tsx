@@ -57,7 +57,7 @@ export const BaseCard: React.FC<BaseCardComponentProps> = ({
         }
         alt={data?.name || "Loading"}
         sx={{
-          objectFit: "cover",
+          objectFit: "contain",
           transition: "transform 0.3s",
           "&:hover": {
             transform: "scale(1.05)",

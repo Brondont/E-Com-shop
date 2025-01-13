@@ -1,33 +1,41 @@
 import {
   Box,
-  Typography,
-  CircularProgress,
   Card,
   CardContent,
-  Stack,
-  Button,
+  CircularProgress,
   Divider,
   IconButton,
+  TextField,
+  Typography,
 } from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useFeedback } from "../../FeedbackAlertContext";
+import ImageGallery from "../../components/imageGallery/ImageGallery";
+import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import { BaseProductData } from "../../components/admin/products/BaseProduct";
+import ProductDetails from "../../components/productDetails/ProductDetails";
 import { VariantData } from "../../components/admin/products/VariantsTable";
-import { formatPrice } from "../../util/formatters";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { useFeedback } from "../../FeedbackAlertContext";
+import VariantSelector from "../../components/variantSelector/VariantSelector";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import RemoveIcon from "@mui/icons-material/Remove";
+import AddIcon from "@mui/icons-material/Add";
+import { LoadingButton } from "@mui/lab";
+import Scene from "../../components/modelViewer/ModelViewer";
+import ViewInArIcon from "@mui/icons-material/ViewInAr"; // Icon for 3D view
 
 const ProductPage: React.FC = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
+  const token = localStorage.getItem("token");
   const { productID } = useParams<{ productID: string }>();
-  const [loadingProduct, setLoadingProduct] = useState<boolean>(true); // Start with loading state
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [loadingProduct, setLoadingProduct] = useState<boolean>(true);
   const [product, setProduct] = useState<BaseProductData | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<VariantData | null>(
     null
   );
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const navigate = useNavigate();
+  const [Model3DView, setModel3DView] = useState<boolean>(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const { showFeedback } = useFeedback();
 
   const fetchProduct = useCallback(async () => {
@@ -51,29 +59,67 @@ const ProductPage: React.FC = () => {
         "Failed to load product details. Please try again later.",
         false
       );
-      setProduct(null); // Ensure product is null if there's an error
+      setProduct(null);
     } finally {
       setLoadingProduct(false);
     }
   }, [apiUrl, productID]);
 
+  const toggle3DModel = () => {
+    setModel3DView((prev) => !prev);
+  };
+
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
 
-  const handleNextImage = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === selectedVariant.images.length - 1 ? 0 : prevIndex + 1
-    );
+  const handleQuantityChange = (value: number) => {
+    if (selectedVariant?.inventory.quantity < value) {
+      showFeedback(
+        "You are exceeding the limit for the available stock.",
+        false
+      );
+      return;
+    }
+    if (value >= 1) {
+      setQuantity(value);
+    }
   };
 
-  const handlePreviousImage = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? selectedVariant.images.length - 1 : prevIndex - 1
-    );
+  const handleAddToCart = async () => {
+    if (!selectedVariant && quantity > 0) return;
+    setAddingToCart(true);
+
+    try {
+      const res = await fetch(`${apiUrl}/cart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({
+          variantID: selectedVariant.ID,
+          quantity: quantity,
+        }),
+      });
+
+      const resData = await res.json();
+
+      if (resData.error) {
+        throw resData.error;
+      }
+
+      setQuantity(1); // Reset quantity after successful add
+      showFeedback("Product added to cart!", true);
+    } catch (err) {
+      if (err.msg) showFeedback(err.msg, false);
+      else
+        showFeedback("Failed to add product to cart. Please try again.", false);
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
-  // Loading State
   if (loadingProduct) {
     return (
       <Box
@@ -89,6 +135,16 @@ const ProductPage: React.FC = () => {
       </Box>
     );
   }
+
+  const onVariantChange = (variant: VariantData) => {
+    setSelectedVariant(variant);
+    setCurrentImageIndex(0); // Reset image index
+    setModel3DView(false); // Reset 3D view when variant changes
+  };
+
+  const onCurrentImageIndexChange = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   if (!product) {
     return (
@@ -112,20 +168,14 @@ const ProductPage: React.FC = () => {
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
         justifyContent: "center",
         width: "100%",
         minHeight: "100vh",
-        p: 4,
-        backgroundColor: "background.default", // Add a subtle background color
+        p: { md: 4 },
+        backgroundColor: "background.default",
       }}
     >
-      <Card
-        sx={{
-          maxWidth: "80vw",
-          width: "100%",
-        }}
-      >
+      <Card sx={{ width: "100%" }}>
         <CardContent>
           <Typography variant="h4" gutterBottom fontWeight="bold">
             {product.name}
@@ -133,12 +183,10 @@ const ProductPage: React.FC = () => {
           <Divider sx={{ my: 2 }} />
 
           {product.variants.length === 0 ? (
-            <Box>
-              <Typography variant="body1" color="text.secondary">
-                Currently, there are no variants available. Please check back
-                later.
-              </Typography>
-            </Box>
+            <Typography variant="body1" color="text.secondary">
+              Currently, there are no variants available. Please check back
+              later.
+            </Typography>
           ) : (
             <Box
               sx={{
@@ -146,134 +194,143 @@ const ProductPage: React.FC = () => {
                 flexDirection: { xs: "column", md: "row" },
                 gap: 4,
                 width: "100%",
+                minHeight: { md: "600px" },
               }}
             >
               {selectedVariant ? (
                 <>
                   <Box
                     sx={{
-                      width: { xs: "100%", md: "40%" },
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      width: { xs: "100%", md: "50%" },
+                      top: { md: 24 },
+                      height: { md: "calc(100vh - 200px)" },
+                      alignSelf: "flex-start",
                       position: "relative",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      backgroundColor: "action.hover", // Placeholder background
                     }}
                   >
-                    {selectedVariant.images.length > 0 ? (
-                      <>
-                        {/* Display Current Image */}
-                        <Box
-                          component="img"
-                          src={
-                            apiUrl.split("/api/")[0] +
-                            selectedVariant.images[currentImageIndex].imagePath
-                          }
-                          alt={`Variant Image ${currentImageIndex + 1}`}
-                          sx={{
-                            width: "100%",
-                            height: "auto",
-                            borderRadius: 2,
-                          }}
-                        />
-
-                        {/* Navigation Buttons */}
-                        {selectedVariant.images.length > 1 && (
-                          <>
-                            <IconButton
-                              onClick={handlePreviousImage}
-                              sx={{
-                                position: "absolute",
-                                left: 8,
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                backgroundColor: "background.paper",
-                                color: "text.primary",
-                                "&:hover": {
-                                  backgroundColor: "action.selected",
-                                },
-                              }}
-                            >
-                              <ChevronLeftIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={handleNextImage}
-                              sx={{
-                                position: "absolute",
-                                right: 8,
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                backgroundColor: "background.paper",
-                                color: "text.primary",
-                                "&:hover": {
-                                  backgroundColor: "action.selected",
-                                },
-                              }}
-                            >
-                              <ChevronRightIcon />
-                            </IconButton>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No images available
-                      </Typography>
+                    {selectedVariant.modelURL && (
+                      <IconButton
+                        onClick={toggle3DModel}
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          zIndex: 999,
+                        }}
+                      >
+                        <ViewInArIcon />
+                      </IconButton>
                     )}
+
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        transition: "opacity 0.3s ease-in-out",
+                        opacity: Model3DView ? 0 : 1,
+                        visibility: Model3DView ? "hidden" : "visible",
+                        position: "absolute",
+                      }}
+                    >
+                      <ImageGallery
+                        variant={selectedVariant}
+                        currentImageIndex={currentImageIndex}
+                        onCurrentImageIndexChange={onCurrentImageIndexChange}
+                      />
+                    </Box>
+
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        transition: "opacity 0.3s ease-in-out",
+                        opacity: Model3DView ? 1 : 0,
+                        visibility: Model3DView ? "visible" : "hidden",
+                      }}
+                    >
+                      <Scene
+                        modelPath={
+                          apiUrl.split("/api/")[0] + selectedVariant.modelURL
+                        }
+                      />
+                    </Box>
                   </Box>
 
+                  {/* Variant Selector and Product Details */}
                   <Box
                     sx={{
-                      width: { xs: "100%", md: "60%" },
                       display: "flex",
                       flexDirection: "column",
-                      gap: 2,
+                      width: "100%",
                     }}
                   >
-                    <Typography variant="h5" gutterBottom fontWeight="bold">
-                      {selectedVariant.name}
+                    <VariantSelector
+                      variants={product.variants}
+                      onVariantChange={onVariantChange}
+                      selectedVariant={selectedVariant}
+                    />
+                    <ProductDetails variant={selectedVariant} />
+                  </Box>
+                  <Box sx={{ minWidth: "300px" }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Quantity:
                     </Typography>
-                    <Divider />
-
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        color="primary"
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <IconButton
+                        onClick={() => handleQuantityChange(quantity - 1)}
+                        disabled={quantity <= 1 || addingToCart}
+                        size="small"
                       >
-                        {formatPrice(selectedVariant.price)}
-                      </Typography>
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Availability:
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          color={
-                            selectedVariant.inventory.quantity === 0
-                              ? "error.main"
-                              : "success.main"
+                        <RemoveIcon />
+                      </IconButton>
+                      <TextField
+                        value={quantity}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value)) {
+                            handleQuantityChange(value);
                           }
-                          fontWeight="bold"
-                        >
-                          {selectedVariant.inventory.quantity === 0
-                            ? "Out of stock"
-                            : `In stock (${selectedVariant.inventory.quantity} left)`}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Divider />
+                        }}
+                        size="small"
+                        sx={{ width: "80px" }}
+                      />
 
-                    <Box>
-                      <Typography variant="h6" gutterBottom fontWeight="bold">
-                        About this item
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary">
-                        {selectedVariant.description}
+                      <IconButton
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        disabled={
+                          quantity >= selectedVariant.inventory.quantity ||
+                          addingToCart
+                        }
+                        size="small"
+                      >
+                        <AddIcon />
+                      </IconButton>
+
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedVariant.inventory.quantity} available
                       </Typography>
                     </Box>
+                    <LoadingButton
+                      loading={addingToCart}
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      fullWidth
+                      startIcon={<AddShoppingCartIcon />}
+                      onClick={handleAddToCart}
+                      disabled={
+                        addingToCart || selectedVariant.inventory.quantity === 0
+                      }
+                    >
+                      {addingToCart ? "Adding..." : "Add to Cart"}
+                    </LoadingButton>
                   </Box>
                 </>
               ) : (

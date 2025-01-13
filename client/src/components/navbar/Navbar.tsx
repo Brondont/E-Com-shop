@@ -9,7 +9,19 @@ import {
   Button,
   IconButton,
   Link,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Badge,
+  InputAdornment,
+  useMediaQuery,
+  Fade,
+  ListItemButton,
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -17,10 +29,14 @@ import CallIcon from "@mui/icons-material/Call";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { UserProps } from "../../pages/user/ProfilePage";
+import { useLocation, useNavigate } from "react-router-dom"; // Import useNavigate for redirection
 
+// Keep your existing MaterialUISwitch styled component...
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
   width: 62,
   height: 34,
@@ -77,6 +93,14 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
   },
 }));
 
+const SearchDrawer = styled(Drawer)(({ theme }) => ({
+  "& .MuiDrawer-paper": {
+    width: "100%",
+    height: "auto",
+    padding: theme.spacing(2),
+  },
+}));
+
 type NavbarProps = {
   user: UserProps;
   isAuth: boolean;
@@ -96,20 +120,54 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isFixed, setIsFixed] = useState<boolean>(false);
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0); // State to store cart item count
   const navbarRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const navigate = useNavigate(); // Hook for navigation
+  const location = useLocation();
+  const apiUrl = process.env.REACT_APP_API_URL;
+  const token = localStorage.getItem("token");
+
+  // Fetch cart item count
+  useEffect(() => {
+    if (!token || !apiUrl) return;
+    const fetchCartItemCount = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/cart`, {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        });
+
+        const resData = await res.json();
+
+        if (resData.error) {
+          throw resData.error;
+        }
+
+        setCartItemCount(resData.cartItems.length);
+      } catch (error) {
+        console.error("Error fetching cart item count:", error);
+      }
+    };
+
+    fetchCartItemCount();
+  }, [apiUrl, token, location]);
 
   useEffect(() => {
     const handleScroll = () => {
-      const navbarHeight = navbarRef.current?.offsetHeight || 0;
+      const currentNavHeight = navbarRef.current?.offsetHeight || 0;
 
-      if (window.scrollY > navbarHeight) {
+      if (window.scrollY > currentNavHeight) {
         setIsFixed(true);
       } else {
         setIsFixed(false);
       }
 
-      if (window.scrollY > lastScrollY) {
+      if (window.scrollY > lastScrollY && window.scrollY > currentNavHeight) {
         setIsHidden(true);
       } else {
         setIsHidden(false);
@@ -118,155 +176,347 @@ const Navbar: React.FC<NavbarProps> = ({
     };
 
     setNavbarHeight(navbarRef.current?.offsetHeight || 0);
-
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add your search logic here
+    setSearchDrawerOpen(false);
+  };
+
+  const handleCartClick = () => {
+    navigate("/cart"); // Redirect to the cart page
+  };
+
+  const renderDesktopTopBar = () => (
+    <Box
+      sx={{
+        display: { xs: "none", md: "flex" },
+        justifyContent: "space-between",
+        px: { md: 4, lg: 20 },
+      }}
+    >
+      <Box sx={{ display: "flex", gap: "20px" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <CallIcon fontSize="small" />
+          <Typography>+213731355019</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <EmailIcon fontSize="small" />
+          <Typography>byteforgesupport@gmail.com</Typography>
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        {isAuth ? (
+          <>
+            <Button
+              startIcon={<PersonIcon />}
+              href="/account"
+              variant="text"
+              sx={{ color: "white" }}
+            >
+              {user.email}
+            </Button>
+            <Button
+              onClick={handleLogout}
+              startIcon={<LogoutIcon />}
+              variant="text"
+              sx={{ color: "white" }}
+            >
+              Log out
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              href="/login"
+              startIcon={<LoginIcon />}
+              variant="text"
+              sx={{ color: "white" }}
+            >
+              Login
+            </Button>
+            <Button
+              href="/signup"
+              startIcon={<AssignmentIcon />}
+              variant="text"
+              sx={{ color: "white" }}
+            >
+              Signup
+            </Button>
+          </>
+        )}
+      </Box>
+    </Box>
+  );
+
+  const renderMobileDrawer = () => (
+    <Drawer
+      anchor="left"
+      open={mobileMenuOpen}
+      onClose={() => setMobileMenuOpen(false)}
+      PaperProps={{
+        sx: {
+          width: "80%",
+          maxWidth: "320px",
+          bgcolor: theme.palette.background.paper,
+        },
+      }}
+    >
+      <Box sx={{ p: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <span>Byte</span>
+            <span style={{ color: theme.palette.primary.main }}>Forge</span>
+          </Typography>
+          <IconButton onClick={() => setMobileMenuOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+      </Box>
+
+      <List>
+        {isAuth ? (
+          <>
+            <ListItemButton href="/account">
+              <ListItemIcon>
+                <PersonIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary={user.email}
+                secondary="My Account"
+                primaryTypographyProps={{ noWrap: true }}
+              />
+            </ListItemButton>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Log out" />
+            </ListItemButton>
+          </>
+        ) : (
+          <>
+            <ListItemButton href="/login">
+              <ListItemIcon>
+                <LoginIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Login" />
+            </ListItemButton>
+            <ListItemButton href="/signup">
+              <ListItemIcon>
+                <AssignmentIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Sign up" />
+            </ListItemButton>
+          </>
+        )}
+        <Divider sx={{ my: 2 }} />
+        <ListItem>
+          <ListItemIcon>
+            <CallIcon color="primary" />
+          </ListItemIcon>
+          <ListItemText primary="Contact Us" secondary="+213731355019" />
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <EmailIcon color="primary" />
+          </ListItemIcon>
+          <ListItemText
+            primary="Email Support"
+            secondary="byteforgesupport@gmail.com"
+            secondaryTypographyProps={{ noWrap: true }}
+          />
+        </ListItem>
+        <Divider sx={{ my: 2 }} />
+        <ListItem>
+          <ListItemText primary="Dark Mode" secondary="Toggle theme" />
+          <MaterialUISwitch checked={isDarkMode} onChange={toggleDarkMode} />
+        </ListItem>
+      </List>
+    </Drawer>
+  );
+
+  const renderSearchDrawer = () => (
+    <SearchDrawer
+      anchor="top"
+      open={searchDrawerOpen}
+      onClose={() => setSearchDrawerOpen(false)}
+    >
+      <Box sx={{ p: 2 }}>
+        <form onSubmit={handleSearchSubmit}>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              fullWidth
+              placeholder="Search products..."
+              variant="outlined"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              autoFocus
+            />
+            <Button
+              variant="contained"
+              type="submit"
+              sx={{ minWidth: "100px" }}
+            >
+              Search
+            </Button>
+            <IconButton size="small" onClick={() => setSearchDrawerOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </form>
+      </Box>
+    </SearchDrawer>
+  );
+
+  const renderDesktopNavbar = () => (
+    <Toolbar
+      sx={{
+        display: { xs: "none", md: "flex" },
+        justifyContent: "space-between",
+        backgroundColor: theme.palette.background.default,
+        p: "6px",
+        px: { md: 4, lg: 20 },
+      }}
+    >
+      <Box
+        sx={{
+          textAlign: "left",
+          color: isDarkMode ? theme.palette.primary.contrastText : "black",
+        }}
+        component={Link}
+        href="/"
+        underline="none"
+      >
+        <Box display="flex">
+          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+            Byte
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{ color: "primary.main", fontWeight: "bold" }}
+          >
+            Forge
+          </Typography>
+        </Box>
+        <Typography>For Techies, By Techies</Typography>
+      </Box>
+
+      <Box sx={{ display: "flex", width: "50%" }}>
+        <TextField
+          size="small"
+          label="Type here"
+          variant="outlined"
+          fullWidth
+        />
+        <Button href="/search" variant="contained">
+          Search
+        </Button>
+      </Box>
+
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <IconButton onClick={handleCartClick}>
+          <Badge badgeContent={cartItemCount} color="error">
+            <ShoppingCartIcon color="primary" />
+          </Badge>
+        </IconButton>
+        <MaterialUISwitch
+          sx={{ m: 1 }}
+          checked={isDarkMode}
+          onChange={toggleDarkMode}
+        />
+      </Box>
+    </Toolbar>
+  );
 
   return (
     <>
-      {isFixed && <Box sx={{ height: navbarHeight }}></Box>}
+      {isFixed && <Box sx={{ height: navbarHeight }} />}
       <Box
         ref={navbarRef}
         sx={{
           width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 100,
+          zIndex: 1200,
           transition: "transform 0.3s ease",
           transform:
             isFixed && isHidden ? "translateY(-100%)" : "translateY(0)",
           position: isFixed ? "fixed" : "relative",
-          top: isFixed && isHidden ? `-${navbarHeight}px` : "0",
+          top: 0,
         }}
       >
-        <AppBar sx={{ position: "static" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              pl: 20,
-              pr: 20,
-            }}
-          >
-            <Box sx={{ display: "flex", gap: "20px" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <CallIcon fontSize="small" />
-                <Typography>+213731355019</Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <EmailIcon fontSize="small" />
-                <Typography>byteforgesupport@gmail.com</Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              {isAuth ? (
-                <>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "5px" }}
-                  >
-                    <Button
-                      startIcon={<PersonIcon />}
-                      href="/account"
-                      variant="text"
-                      sx={{ color: "white" }}
-                    >
-                      {user.email}
-                    </Button>
-                  </Box>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "5px" }}
-                  >
-                    <Button
-                      onClick={handleLogout}
-                      startIcon={<LogoutIcon />}
-                      variant="text"
-                      sx={{ color: "white" }}
-                    >
-                      Log out
-                    </Button>
-                  </Box>
-                </>
-              ) : (
-                <>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "5px" }}
-                  >
-                    <Button
-                      href="/login"
-                      startIcon={<LoginIcon />}
-                      variant="text"
-                      sx={{ color: "white" }}
-                    >
-                      Login
-                    </Button>
-                  </Box>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "5px" }}
-                  >
-                    <Button
-                      href="/signup"
-                      startIcon={<AssignmentIcon />}
-                      variant="text"
-                      sx={{ color: "white" }}
-                    >
-                      Signup
-                    </Button>
-                  </Box>
-                </>
-              )}
-            </Box>
-          </Box>
-        </AppBar>
-        <AppBar sx={{ position: "static", bgcolor: theme.background.damp }}>
-          <Toolbar
-            sx={{ display: "flex", justifyContent: "space-between", p: "6px" }}
-          >
-            <Box
-              sx={{ textAlign: "center", color: "black" }}
-              component={Link}
-              href="/"
-              underline="none"
+        <AppBar position="static" elevation={1}>
+          {renderDesktopTopBar()}
+          {isMobile ? (
+            <Toolbar
+              sx={{
+                justifyContent: "space-between",
+                background: theme.palette.background.default,
+                color: isDarkMode
+                  ? theme.palette.primary.contrastText
+                  : "black",
+                minHeight: { xs: 56, sm: 64 },
+              }}
             >
-              <Box display="flex" justifyContent="center">
-                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  Byte
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "primary.main", fontWeight: "bold" }}
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  edge="start"
+                  color="inherit"
+                  onClick={() => setMobileMenuOpen(true)}
+                  sx={{ mr: 1 }}
                 >
-                  Forge
-                </Typography>
+                  <MenuIcon />
+                </IconButton>
+
+                <Link href="/" underline="none" color="inherit">
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    <span>Byte</span>
+                    <span style={{ color: theme.palette.primary.main }}>
+                      Forge
+                    </span>
+                  </Typography>
+                </Link>
               </Box>
-              <Typography>For Techies, By Techies</Typography>
-            </Box>
-            <Box sx={{ display: "flex", width: "50%" }}>
-              <TextField
-                size="small"
-                label="Type here"
-                variant="outlined"
-                fullWidth
-              />
-              <Button href="/search" variant="contained">
-                Search
-              </Button>
-            </Box>
-            <Box>
-              <IconButton>
-                <ShoppingCartIcon color="primary" />
-              </IconButton>
-              <MaterialUISwitch
-                sx={{ m: 1 }}
-                checked={isDarkMode}
-                onChange={toggleDarkMode}
-              />
-            </Box>
-          </Toolbar>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <IconButton
+                  color="inherit"
+                  onClick={() => setSearchDrawerOpen(true)}
+                >
+                  <SearchIcon />
+                </IconButton>
+
+                <IconButton color="inherit" onClick={handleCartClick}>
+                  <Badge badgeContent={cartItemCount} color="error">
+                    <ShoppingCartIcon color="primary" />
+                  </Badge>
+                </IconButton>
+              </Box>
+            </Toolbar>
+          ) : (
+            renderDesktopNavbar()
+          )}
         </AppBar>
       </Box>
+
+      {renderMobileDrawer()}
+      {renderSearchDrawer()}
     </>
   );
 };

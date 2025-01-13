@@ -25,6 +25,7 @@ type MultiPartFormData struct {
 	Fields map[string][]string
 	File   *multipart.FileHeader
 	Files  []*multipart.FileHeader
+	Model  *multipart.FileHeader
 }
 
 func ParseJson(r *http.Request, payload any) error {
@@ -80,7 +81,7 @@ func ParseMultipartForm(r *http.Request, maxMemory int64) (*MultiPartFormData, e
 	}
 
 	data := &MultiPartFormData{
-		Fields: make(map[string][]string), // Use a slice to store multiple values
+		Fields: make(map[string][]string),
 	}
 
 	// Get form fields - handles both Form and PostForm
@@ -94,6 +95,10 @@ func ParseMultipartForm(r *http.Request, maxMemory int64) (*MultiPartFormData, e
 
 	if fileHeader, ok := r.MultipartForm.File["image"]; ok && len(fileHeader) > 0 {
 		data.File = fileHeader[0]
+	}
+
+	if modelHeader, ok := r.MultipartForm.File["model"]; ok && len(modelHeader) > 0 {
+		data.Model = modelHeader[0]
 	}
 
 	if files, ok := r.MultipartForm.File["images"]; ok {

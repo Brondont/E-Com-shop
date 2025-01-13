@@ -3,17 +3,10 @@ import {
   Box,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   Avatar,
   Chip,
   Button,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,8 +14,7 @@ import {
   Skeleton,
   Paper,
 } from "@mui/material";
-import { alpha, styled, useTheme } from "@mui/material/styles";
-import { tableCellClasses } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -46,6 +38,7 @@ export interface VariantData {
   name: string;
   description: string;
   images: Image[];
+  modelURL: string;
   price: number;
   inventory: {
     quantity: number;
@@ -112,7 +105,8 @@ const VariantsTable: React.FC<VariantsTableProps> = ({
       quantity: undefined,
       existingImages: [],
       newImages: [],
-      model: null,
+      existingModel: "",
+      newModel: null,
     });
   const [submittingVariant, setSubmittingVariant] = useState<boolean>(false);
   const [selectedVariant, setSelectedVariant] = useState<VariantData | null>(
@@ -136,7 +130,8 @@ const VariantsTable: React.FC<VariantsTableProps> = ({
       quantity: variant.inventory.quantity,
       existingImages: variant.images,
       newImages: [],
-      model: null,
+      existingModel: variant.modelURL,
+      newModel: null,
     });
   };
 
@@ -228,6 +223,11 @@ const VariantsTable: React.FC<VariantsTableProps> = ({
       formData.append("images", image);
     });
 
+    // add 3d model if it exists
+    if (variantDialogData.newModel) {
+      formData.append("model", variantDialogData.newModel);
+    }
+
     try {
       const res = await fetch(`${apiUrl}/variant`, {
         method: "PUT",
@@ -266,6 +266,7 @@ const VariantsTable: React.FC<VariantsTableProps> = ({
       setSubmittingVariant(false);
     }
   };
+
   const VariantCard = ({ variant }: { variant: VariantData }) => {
     return (
       <Paper
@@ -424,6 +425,7 @@ const VariantsTable: React.FC<VariantsTableProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 4,
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 600 }}>

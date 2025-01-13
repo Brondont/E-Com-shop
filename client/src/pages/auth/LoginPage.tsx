@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useFeedback } from "../../FeedbackAlertContext";
-import { useNavigate } from "react-router-dom";
 
 const shakeAnimation = keyframes`
   0% { transform: translateX(0); }
@@ -54,7 +53,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [isShake, setIsShake] = useState<boolean>(false);
   const { showFeedback } = useFeedback();
-  const navigate = useNavigate();
 
   const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -89,7 +87,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ handleLogin }) => {
 
     let statusCode: number;
 
-    fetch(`${apiUrl}/postLogin`, {
+    fetch(`${apiUrl}/login`, {
       method: "POST",
       body: JSON.stringify(formData),
       headers: {

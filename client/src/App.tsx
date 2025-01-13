@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Box } from "@mui/material";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  UNSAFE_createClientRoutesWithHMRRevalidationOptOut,
+} from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
@@ -20,8 +26,10 @@ import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
 import { UserProps } from "./pages/user/ProfilePage";
-import ProductSearch from "./pages/user/ProductSearchPage";
+import ProductSearch from "./pages/ProductSearchPage";
 import ProductPage from "./pages/user/ProductPage";
+import UserCartPage from "./pages/user/UserCartPage";
+import UserCheckoutPage from "./pages/user/UserCheckoutPage";
 
 const App: React.FC = () => {
   const [isAuth, setIsAuth] = useState<boolean>(false);
@@ -51,7 +59,7 @@ const App: React.FC = () => {
 
   const handleLogin = useCallback(
     (token: string) => {
-      fetch(`${apiUrl}/getUser`, {
+      fetch(`${apiUrl}/user`, {
         headers: {
           Authorization: "Bearer " + token,
         },
@@ -105,6 +113,8 @@ const App: React.FC = () => {
           <>
             <Route path="/account" element={<ProfilePage user={user} />} />
             <Route path="/account/addresses" element={<AddressesPage />} />
+            <Route path="/cart" element={<UserCartPage />} />
+            <Route path="/checkout" element={<UserCheckoutPage />} />
           </>
         )}
         {!isAuth && (
@@ -121,9 +131,7 @@ const App: React.FC = () => {
     );
   };
 
-  const shouldDisplayNavbar =
-    !location.pathname.startsWith("/admin") &&
-    !["/login", "/signup"].includes(location.pathname);
+  const shouldDisplayNavbar = !location.pathname.startsWith("/admin");
 
   const shouldDisplayFooter = !location.pathname.startsWith("/admin");
 
@@ -146,7 +154,7 @@ const App: React.FC = () => {
               isDarkMode={isDarkMode}
             />
           )}
-          <Box sx={{ position: "relative", width: "100%" }}>
+          <Box sx={{ position: "relative", width: "100%", minHeight: "80vh" }}>
             <FeedbackAlert />
             {isLoading ? <LoadingPage /> : <Routes>{getRoutes()}</Routes>}
           </Box>

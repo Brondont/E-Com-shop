@@ -24,6 +24,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { useFeedback } from "../../../FeedbackAlertContext"; // Adjust the path as needed
 import { Image } from "./VariantsTable";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css"; // Quill's CSS
 
 // TODO: Seperate the logic for creating manufacturers/categories for the ability to create editing for them.
 
@@ -220,7 +222,13 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
         setManufacturers((prev) => [...prev, resData.manufacturer]);
       }
       showFeedback(`${selectAddDialogData.type} created successfully!`, true);
-      handleCloseAddSelectDialog();
+      setSelectAddDialogData({
+        isOpen: false,
+        name: "",
+        description: "",
+        type: "",
+        image: null,
+      });
     } catch (err) {
       if (err.msg) showFeedback(err.msg, false);
       else
@@ -322,16 +330,38 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
             value={newBaseProduct.name}
           />
         </FormControl>
-        <FormControl>
-          <TextField
-            autoFocus
-            label="Description"
-            name="description"
-            onChange={handleNewBaseProductInput}
-            fullWidth
-            multiline
-            rows={4}
+        <FormControl sx={{ maxHeight: "700px" }}>
+          <ReactQuill
+            theme="snow"
+            style={{ overflow: "auto" }}
             value={newBaseProduct.description}
+            onChange={(value) =>
+              setNewBaseProduct((prev) => ({
+                ...prev,
+                description: value,
+              }))
+            }
+            modules={{
+              toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["link", "image"],
+                ["clean"],
+              ],
+            }}
+            formats={[
+              "header",
+              "bold",
+              "italic",
+              "underline",
+              "strike",
+              "list",
+              "bullet",
+              "link",
+              "image",
+            ]}
+            placeholder="Enter the product description..."
           />
         </FormControl>
         <FormControl>

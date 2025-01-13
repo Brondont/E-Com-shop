@@ -134,7 +134,9 @@ const BaseProductPreview: React.FC<BaseProductPreviewProps> = ({ product }) => {
                   lineHeight: 1.6,
                 }}
               >
-                {product.description || "No description available"}
+                <div
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                ></div>
               </Typography>
             </Box>
 

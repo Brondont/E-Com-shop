@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CircularProgress from "@mui/material/CircularProgress";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { LoadingButton } from "@mui/lab";
 import Autocomplete from "@mui/material/Autocomplete";
 import { Link } from "react-router-dom";
@@ -92,7 +93,7 @@ type AddressField = {
   error: string;
 };
 
-type Address = {
+export type Address = {
   ID: number;
   street1: string;
   street2: string;
@@ -110,6 +111,7 @@ const AddressesPage: React.FC = () => {
   // State
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState<boolean>(false);
+  const [deletingAddress, setDeletingAddress] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
   const [isShake, setIsShake] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -163,7 +165,7 @@ const AddressesPage: React.FC = () => {
       setIsLoadingAddresses(true);
 
       try {
-        const response = await fetch(`${apiUrl}/getAddresses`, {
+        const response = await fetch(`${apiUrl}/addresses`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const resData = await response.json();
@@ -296,7 +298,7 @@ const AddressesPage: React.FC = () => {
     };
 
     const requestMethod = isEditMode ? "PUT" : "POST";
-    const requestUrl = `${apiUrl}/${isEditMode ? "putAddress" : "postAddress"}`;
+    const requestUrl = `${apiUrl}/address`;
 
     try {
       const response = await fetch(requestUrl, {
@@ -334,6 +336,39 @@ const AddressesPage: React.FC = () => {
       );
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleDeleteAddress = async (addressID: number) => {
+    if (deletingAddress) return;
+    setDeletingAddress(true);
+    try {
+      const res = await fetch(`${apiUrl}/address/${addressID}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
+
+      const resData = await res.json();
+
+      if (resData.error) {
+        throw resData.error;
+      }
+
+      setAddresses((prev) =>
+        prev.filter((address) => address.ID !== addressID)
+      );
+      showFeedback("Address deleted successfully", true);
+    } catch (err) {
+      if (err.msg) showFeedback(err.msg, false);
+      else
+        showFeedback(
+          "something went wrong with deleting the address, try again",
+          false
+        );
+    } finally {
+      setDeletingAddress(false);
     }
   };
 
@@ -394,21 +429,41 @@ const AddressesPage: React.FC = () => {
   return (
     <>
       <MyBreadcrumbs />
+
       <Box
         sx={{
-          minHeight: "80vh",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          p: 2,
+          width: "100%",
         }}
       >
-        <Card sx={{ maxHeight: "70vh", overflowY: "scroll" }}>
-          <CardContent>
+        <Card
+          sx={{
+            flex: "1 1 80%",
+            maxWidth: "80%",
+            width: "100%",
+          }}
+        >
+          <CardContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              p: 4,
+            }}
+          >
             <Typography variant="h5" sx={{ fontWeight: "bold", mb: 4 }}>
               Your Addresses
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", p: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                p: 2,
+                maxHeight: "100vh",
+                overflow: "auto",
+              }}
+            >
               {isLoadingAddresses ? (
                 <>
                   <CircularProgress />
@@ -427,37 +482,59 @@ const AddressesPage: React.FC = () => {
                             key={index}
                             divider
                             secondaryAction={
-                              <IconButton
-                                edge="end"
-                                aria-label="edit"
-                                onClick={() => {
-                                  openEdit(address);
-                                  handleOpen();
-                                }}
-                              >
-                                <EditNoteIcon color="primary" />
-                              </IconButton>
+                              <Box>
+                                <IconButton
+                                  edge="end"
+                                  aria-label="edit"
+                                  onClick={() => {
+                                    openEdit(address);
+                                    handleOpen();
+                                  }}
+                                >
+                                  <EditNoteIcon color="primary" />
+                                </IconButton>
+                                <IconButton
+                                  edge="end"
+                                  onClick={() => {
+                                    handleDeleteAddress(address.ID);
+                                  }}
+                                >
+                                  <DeleteIcon color="error" />
+                                </IconButton>
+                              </Box>
                             }
                             sx={{
                               display: "flex",
-                              flexDirection: "column",
-                              alignItems: "flex-start",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              padding: 2,
                             }}
                           >
-                            <Typography variant="h6">
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: "bold" }}
+                            >
                               {address.country}
                             </Typography>
-                            <Typography>
-                              {address.street1}
-                              {address.street2 && ` ${address.street2}`}
-                            </Typography>
-                            <Typography>
-                              {address.state && `${address.state}`}
-                              {address.city && ` ${address.city}`}
-                            </Typography>
-                            <Typography>
-                              {address.postalCode && `${address.postalCode}`}
-                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Typography>
+                                {address.street1}
+                                {address.street2 && `, ${address.street2}`}
+                              </Typography>
+                              <Typography>
+                                {address.city && `${address.city}`}
+                                {address.state && `, ${address.state}`}
+                              </Typography>
+                              <Typography>
+                                {address.postalCode && `${address.postalCode}`}
+                              </Typography>
+                            </Box>
                           </ListItem>
                         ))}
                       </List>

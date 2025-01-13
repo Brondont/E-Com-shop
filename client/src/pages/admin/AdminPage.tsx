@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Box, AppBar, Toolbar, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import Dashboard from "../../components/admin/dashboard/Dashboard";
-import Users from "../../components/admin/users/Users";
-import Settings from "../../components/admin/settings/settings";
 import Sidebar, { Section } from "../../components/admin/sidebar/Sidebar";
 import { UserProps } from "../user/ProfilePage";
 import { useLocation, useNavigate } from "react-router-dom";
 import BaseProduct from "../../components/admin/products/BaseProduct";
+import UserManagement from "../../components/admin/user/UserManagement";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PeopleIcon from "@mui/icons-material/People";
-import SettingsIcon from "@mui/icons-material/Settings";
 import ViewQuiltIcon from "@mui/icons-material/ViewQuilt";
 import TableChartIcon from "@mui/icons-material/TableChart";
-import VariantManagment from "../../components/admin/products/VariantManagment";
+import VariantManagement from "../../components/admin/products/VariantManagement";
 
 interface AdminSpaceProps {
   handleLogout: () => void;
@@ -42,7 +40,6 @@ const SideBarSections: Section[] = [
     },
   },
   { name: "Users", path: "users", icon: <PeopleIcon /> },
-  { name: "Settings", path: "settings", icon: <SettingsIcon /> },
 ];
 
 const AdminPage: React.FC<AdminSpaceProps> = ({ handleLogout, user }) => {
@@ -60,7 +57,7 @@ const AdminPage: React.FC<AdminSpaceProps> = ({ handleLogout, user }) => {
     if (path) {
       setSelectedSection(path);
     }
-  }, []);
+  }, [location]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -69,11 +66,9 @@ const AdminPage: React.FC<AdminSpaceProps> = ({ handleLogout, user }) => {
       case "products/base-product":
         return <BaseProduct />;
       case "products/product-variants":
-        return <VariantManagment />;
+        return <VariantManagement />;
       case "users":
-        return <Users />;
-      case "settings":
-        return <Settings />;
+        return <UserManagement />;
       default:
         return <Dashboard />;
     }

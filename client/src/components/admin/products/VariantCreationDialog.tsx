@@ -18,6 +18,8 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import { Image } from "./VariantsTable";
+import ReactQuill from "react-quill";
+import Scene from "../../modelViewer/ModelViewer";
 
 export interface DialogProductVariantProps {
   isOpen: boolean;
@@ -27,7 +29,8 @@ export interface DialogProductVariantProps {
   quantity: number | undefined;
   existingImages: Image[]; // URLs of existing images
   newImages: File[]; // New images to upload
-  model: File | null;
+  existingModel: string;
+  newModel: File | null;
 }
 
 interface VariantCreationDialogProps {
@@ -79,7 +82,7 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
     const file = e.target.files?.[0];
     setVariantDialogData((prev) => ({
       ...prev,
-      model: file,
+      newModel: file,
     }));
   };
 
@@ -106,7 +109,7 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
       description: "",
       existingImages: [],
       newImages: [],
-      model: null,
+      newMode: null,
     }));
   };
 
@@ -126,15 +129,38 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
           />
         </FormControl>
 
-        <FormControl>
-          <TextField
-            multiline
-            rows={6}
+        <FormControl sx={{ maxHeight: "700px" }}>
+          <ReactQuill
+            theme="snow"
+            style={{ overflow: "auto" }}
             value={variantDialogData.description}
-            name="description"
-            label="Description"
-            onChange={handleDialogInputChange}
-            variant="outlined"
+            onChange={(value) =>
+              setVariantDialogData((prev) => ({
+                ...prev,
+                description: value,
+              }))
+            }
+            modules={{
+              toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["link", "image"],
+                ["clean"],
+              ],
+            }}
+            formats={[
+              "header",
+              "bold",
+              "italic",
+              "underline",
+              "strike",
+              "list",
+              "bullet",
+              "link",
+              "image",
+            ]}
+            placeholder="Enter the product description..."
           />
         </FormControl>
 
@@ -265,7 +291,14 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
           >
             3D Model
           </Typography>
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
             <Button
               component="label"
               variant="contained"
@@ -280,10 +313,37 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
                 onChange={handleDialogModelUpload}
               />
             </Button>
-            {variantDialogData.model && (
-              <Typography variant="body2" color="text.secondary">
-                {variantDialogData.model.name}
-              </Typography>
+            {variantDialogData.newModel && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  height: "500px",
+                }}
+              >
+                <Typography>New model:</Typography>
+                <Scene
+                  modelPath={URL.createObjectURL(variantDialogData.newModel)}
+                />
+              </Box>
+            )}
+            {variantDialogData.existingModel && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  height: "500px",
+                }}
+              >
+                <Typography>Existing model:</Typography>
+                <Scene
+                  modelPath={
+                    apiUrl.split("/api/")[0] + variantDialogData.existingModel
+                  }
+                />
+              </Box>
             )}
           </Box>
         </Box>

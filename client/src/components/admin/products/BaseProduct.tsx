@@ -48,7 +48,8 @@ const BaseProduct: React.FC = () => {
       quantity: undefined,
       newImages: [],
       existingImages: [],
-      model: null,
+      newModel: null,
+      existingModel: "",
     });
   const [submittingVariant, setSubmittingVariant] = useState<boolean>(false);
 
@@ -148,6 +149,9 @@ const BaseProduct: React.FC = () => {
     variantDialogData.newImages.forEach((image) => {
       formData.append("images", image);
     });
+    if (variantDialogData.newModel) {
+      formData.append("model", variantDialogData.newModel);
+    }
 
     try {
       const res = await fetch(`${apiUrl}/variant`, {
@@ -285,6 +289,7 @@ const BaseProduct: React.FC = () => {
       <Card
         sx={{
           minWidth: "40%",
+          maxWidth: "50%",
         }}
       >
         <CardContent

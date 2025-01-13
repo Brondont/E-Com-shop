@@ -10,6 +10,7 @@ export interface Product {
 }
 
 export interface Filters {
-  selectedCategories: Category[];
-  selectedManufacturer: Manufacturer[];
+  searchQuery: string;
+  selectedCategories: number[];
+  selectedManufacturers: number[];
 }

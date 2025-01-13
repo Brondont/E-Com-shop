@@ -73,8 +73,17 @@ func IsAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		// extract is adming flag
+		isAdmin, ok := claims["isAdmin"].(bool)
+		if !ok {
+			err := errors.New("invalid isAdmin value in token")
+			utils.WriteError(w, http.StatusUnauthorized, err)
+			return
+		}
+
 		// Create new context with claims
 		ctx := context.WithValue(r.Context(), "userID", int(userID))
+		ctx = context.WithValue(ctx, "isAdmin", isAdmin)
 		// Add all claims to context
 		ctx = context.WithValue(ctx, "claims", claims)
 

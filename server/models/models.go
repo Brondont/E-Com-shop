@@ -26,14 +26,14 @@ type Category struct {
 type Manufacturer struct {
 	gorm.Model
 	Name        string    `json:"name" gorm:"type:varchar(100); not null; unique"`
-	Description string    `json:"description" gorm:"type:varchar(100); not null"`
+	Description string    `json:"description" gorm:"type:text; not null"`
 	Products    []Product `json:"products" gorm:"foreignKey:ManufacturerID"`
 	Image       Image     `json:"image" gorm:"foreignKey:ManufacturerID"`
 }
 
 type Image struct {
 	gorm.Model
-	VariantID      *uint  `json:"variantID" gorm:"index"` // Add index for faster lookups
+	VariantID      *uint  `json:"variantID" gorm:"index"`
 	ProductID      *uint  `json:"productID,omitempty" gorm:"index"`
 	ManufacturerID *uint  `json:"manufacturerID" gorm:"index"`
 	BrandID        *uint  `json:"brandID,omitempty" gorm:"index"`
@@ -67,7 +67,7 @@ type Variant struct {
 
 type Inventory struct {
 	gorm.Model
-	VariantID   uint      `json:"variantID"` // Ensure unique constraint
+	VariantID   uint      `json:"variantID"`
 	Quantity    uint      `json:"quantity" gorm:"type:int;not null"`
 	LastUpdated time.Time `json:"lastUpdated" gorm:"autoUpdateTime"`
 }
@@ -75,7 +75,7 @@ type Inventory struct {
 type Address struct {
 	gorm.Model
 	UserID     uint   `json:"userID"`
-	User       User   `json:"user" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	User       User   `json:"user" gorm:"constraint:OnDelete:CASCADE;"`
 	Street1    string `json:"street1" gorm:"type:varchar(255);not null"`
 	Street2    string `json:"street2" gorm:"type:varchar(255)"`
 	City       string `json:"city" gorm:"type:varchar(100);not null"`
@@ -88,8 +88,8 @@ type OrderItem struct {
 	gorm.Model
 	Order     Order   `json:"order" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	OrderID   uint    `json:"orderID"`
-	ProductID uint    `json:"productID"`
-	Product   Product `json:"product" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	VariantID uint    `json:"variantID"`
+	Variant   Variant `json:"variant" gorm:"constraint:OnDelete:CASCADE"`
 	Quantity  int     `json:"quantity" gorm:"type:int;not null"`
 	Price     float64 `json:"price" gorm:"type:decimal(10,2);not null"`
 }
@@ -107,9 +107,8 @@ type Order struct {
 
 type CartItem struct {
 	gorm.Model
-	UserID    uint    `json:"userID"`
-	User      User    `json:"user" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	ProductID uint    `json:"productID"`
-	Product   Product `json:"product" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Quantity  int     `json:"quantity" gorm:"type:int;not null"`
+	UserID    uint    `json:"userID" gorm:"constraint:OnDelete:CASCADE"`
+	VariantID uint    `json:"variantID" gorm:"constraint:OnDelete:CASCADE"`
+	Variant   Variant `json:"variant" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Quantity  uint    `json:"quantity" gorm:"type:int;not null"`
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -13,8 +14,9 @@ import (
 )
 
 const (
-	maxFileSize     = 10 << 20 // 10MB
-	uploadDirectory = "/public/images"
+	maxFileSize          = 10 << 20 // 10MB
+	modelUploadDirectory = "/public/models"
+	uploadDirectory      = "/public/images"
 )
 
 type AdminHandler struct {
@@ -27,14 +29,92 @@ func NewAdminHandler() *AdminHandler {
 	}
 }
 
-func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
-	_, ok := r.Context().Value("userID").(int)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
+func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	query := r.URL.Query()
+	page, _ := strconv.Atoi(query.Get("page"))
+	limit, _ := strconv.Atoi(query.Get("limit"))
+	search := query.Get("search")
+
+	// Set default values if not provided
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Initialize the base query
+	baseQuery := db.DB.DB.Model(&models.User{}).Select(
+		"id", "email", "username", "created_at", "phone_number", "is_admin",
+		// Add other non-sensitive fields you want to return
+	)
+
+	// Apply search filter if provided
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		baseQuery = baseQuery.Where(
+			"username LIKE ? OR email LIKE ? OR phone_number LIKE ?",
+			searchPattern, searchPattern, searchPattern,
+		)
+	}
+
+	// Get total count for pagination
+	var total int64
+	if err := baseQuery.Count(&total).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("error counting users"))
 		return
 	}
 
+	// Get paginated users
+	var users []models.User
+	result := baseQuery.Limit(limit).Offset(offset).Find(&users)
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("error fetching users"))
+		return
+	}
+
+	// Calculate total pages
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+	// Prepare response
+	response := map[string]interface{}{
+		"users": users,
+		"pagination": map[string]interface{}{
+			"currentPage":  page,
+			"totalPages":   totalPages,
+			"totalItems":   total,
+			"itemsPerPage": limit,
+		},
+	}
+
+	utils.WriteJson(w, http.StatusOK, response)
+}
+
+func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["userID"]
+
+	if userID == "" {
+		utils.WriteError(w, http.StatusBadRequest, errors.New("user id is missing in the url"))
+		return
+	}
+
+	result := db.DB.DB.Where("id = ?", userID).Delete(&models.User{})
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "User was deleted.",
+	})
+}
+
+func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
@@ -103,13 +183,6 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) PostManufacturer(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
-	_, ok := r.Context().Value("userID").(int)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
-		return
-	}
-
 	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
@@ -304,6 +377,17 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 	}
 	variantPayload.ProductID = uint(productIDInt)
 
+	// insert 3d model if it exists
+	if formData.Model != nil {
+		modelPath, err := utils.SaveUploadedFile(formData.Model, modelUploadDirectory)
+		if err != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+		variantPayload.ModelUrl = modelPath
+	}
+
 	result := tx.Create(&variantPayload)
 	if result.Error != nil {
 		tx.Rollback()
@@ -460,6 +544,17 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oldVariant.Inventory.Quantity = uint(quantity)
+
+	// update 3d model if it exists
+	if formData.Model != nil {
+		modelPath, err := utils.SaveUploadedFile(formData.Model, modelUploadDirectory)
+		if err != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+		oldVariant.ModelUrl = modelPath
+	}
 
 	// Save the updated variant
 	result = tx.Save(&oldVariant)

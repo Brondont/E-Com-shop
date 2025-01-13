@@ -199,7 +199,7 @@ const SignupPage: React.FC = () => {
 
     let statusCode: Number;
 
-    fetch(`${apiUrl}/postSignup`, {
+    fetch(`${apiUrl}/signup`, {
       method: "POST",
       body: JSON.stringify(formData),
       headers: {
