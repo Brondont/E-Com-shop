@@ -16,7 +16,7 @@ import BaseProductSearch from "./BaseProductSearch";
 import BaseProductCreation, {
   BaseProductCreationData,
   Category,
-  Manufacturer,
+  Brand,
 } from "./BaseProductCreation";
 
 export interface BaseProductData {
@@ -25,7 +25,7 @@ export interface BaseProductData {
   description: string;
   image: Image;
   category: Category | undefined;
-  manufacturer: Manufacturer | undefined;
+  brand: Brand | undefined;
   variants?: VariantData[];
 }
 
@@ -59,7 +59,7 @@ const BaseProduct: React.FC = () => {
       description: "",
       image: null,
       categoryID: undefined,
-      manufacturerID: undefined,
+      brandID: undefined,
     }
   );
   const [submittingNewBaseProduct, setSubmittingNewBaseProduct] =
@@ -192,7 +192,7 @@ const BaseProduct: React.FC = () => {
     if (newBaseProduct.name === "") return "Name is required.";
     if (newBaseProduct.description === "") return "Description is required.";
     if (!newBaseProduct.categoryID) return "Category is required";
-    if (!newBaseProduct.manufacturerID) return "Manufacturer is required";
+    if (!newBaseProduct.brandID) return "Brand is required";
     if (!newBaseProduct.image) return "Image is required";
     return "";
   };
@@ -212,7 +212,7 @@ const BaseProduct: React.FC = () => {
     formData.append("name", newBaseProduct.name);
     formData.append("description", newBaseProduct.description);
     formData.append("categoryID", newBaseProduct.categoryID.toString());
-    formData.append("manufacturerID", newBaseProduct.manufacturerID.toString());
+    formData.append("brandID", newBaseProduct.brandID.toString());
     formData.append("image", newBaseProduct.image);
 
     try {

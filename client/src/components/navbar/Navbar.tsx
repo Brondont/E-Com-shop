@@ -7,6 +7,7 @@ import {
   Toolbar,
   Typography,
   Button,
+  FormControl,
   IconButton,
   Link,
   Drawer,
@@ -16,9 +17,7 @@ import {
   ListItemText,
   Divider,
   Badge,
-  InputAdornment,
   useMediaQuery,
-  Fade,
   ListItemButton,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -122,11 +121,12 @@ const Navbar: React.FC<NavbarProps> = ({
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0); // State to store cart item count
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const navbarRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
   const location = useLocation();
   const apiUrl = process.env.REACT_APP_API_URL;
   const token = localStorage.getItem("token");
@@ -182,7 +182,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Add your search logic here
+    navigate(`/search?q=${searchQuery}`);
     setSearchDrawerOpen(false);
   };
 
@@ -358,17 +358,13 @@ const Navbar: React.FC<NavbarProps> = ({
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               fullWidth
-              placeholder="Search products..."
+              placeholder="Search Our Store"
               variant="outlined"
               size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="primary" />
-                  </InputAdornment>
-                ),
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
               }}
-              autoFocus
             />
             <Button
               variant="contained"
@@ -420,15 +416,23 @@ const Navbar: React.FC<NavbarProps> = ({
       </Box>
 
       <Box sx={{ display: "flex", width: "50%" }}>
-        <TextField
-          size="small"
-          label="Type here"
-          variant="outlined"
-          fullWidth
-        />
-        <Button href="/search" variant="contained">
-          Search
-        </Button>
+        <form onSubmit={handleSearchSubmit} style={{ width: "100%" }}>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              size="small"
+              label="Search Our Store"
+              variant="outlined"
+              fullWidth
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
+            />
+            <Button type="submit" variant="contained">
+              Search
+            </Button>
+          </Box>
+        </form>
       </Box>
 
       <Box sx={{ display: "flex", alignItems: "center" }}>

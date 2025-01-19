@@ -27,17 +27,17 @@ import { Image } from "./VariantsTable";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Quill's CSS
 
-// TODO: Seperate the logic for creating manufacturers/categories for the ability to create editing for them.
+// TODO: Separate the logic for creating brands/categories for the ability to create editing for them.
 
 export interface BaseProductCreationData {
   name: string;
   description: string;
   image: File | null;
   categoryID: number;
-  manufacturerID: number;
+  brandID: number;
 }
 
-export interface Manufacturer {
+export interface Brand {
   ID: number;
   name: string;
   description: string;
@@ -76,9 +76,8 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
 }) => {
   const theme = useTheme();
   const { showFeedback } = useFeedback();
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [loadingManufacturers, setLoadingManufacturers] =
-    useState<boolean>(false);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loadingBrands, setLoadingBrands] = useState<boolean>(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false);
   const [selectAddDialogData, setSelectAddDialogData] =
@@ -219,7 +218,7 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
       if (selectAddDialogData.type === "Category") {
         setCategories((prev) => [...prev, resData.category]);
       } else {
-        setManufacturers((prev) => [...prev, resData.manufacturer]);
+        setBrands((prev) => [...prev, resData.brand]);
       }
       showFeedback(`${selectAddDialogData.type} created successfully!`, true);
       setSelectAddDialogData({
@@ -266,12 +265,12 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
     }
   }, [apiUrl]);
 
-  const fetchManufacturers = useCallback(async () => {
-    if (loadingManufacturers) return;
-    setLoadingManufacturers(true);
+  const fetchBrands = useCallback(async () => {
+    if (loadingBrands) return;
+    setLoadingBrands(true);
 
     try {
-      const res = await fetch(`${apiUrl}/manufacturers`);
+      const res = await fetch(`${apiUrl}/brands`);
 
       const resData = await res.json();
 
@@ -279,30 +278,30 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
         throw resData.error;
       }
 
-      setManufacturers(resData.manufacturers);
+      setBrands(resData.brands);
     } catch (err) {
       if (err.msg) showFeedback(err.msg, false);
       else
         showFeedback(
-          "Something went wrong fetching the manufacturers, reset the page.",
+          "Something went wrong fetching the brands, reset the page.",
           false
         );
     } finally {
-      setLoadingManufacturers(false);
+      setLoadingBrands(false);
     }
   }, [apiUrl]);
 
   useEffect(() => {
     fetchCategories();
-    fetchManufacturers();
-  }, [apiUrl, fetchCategories, fetchManufacturers]);
+    fetchBrands();
+  }, [apiUrl, fetchCategories, fetchBrands]);
 
   const clearNewBaseProduct = () => {
     setNewBaseProduct({
       name: "",
       description: "",
       categoryID: undefined,
-      manufacturerID: undefined,
+      brandID: undefined,
       image: null,
     });
   };
@@ -365,35 +364,35 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
           />
         </FormControl>
         <FormControl>
-          <InputLabel>Manufacturer</InputLabel>
+          <InputLabel>Brand</InputLabel>
           <Select
-            name="manufacturerID"
-            label="Manufacturer"
+            name="brandID"
+            label="Brand"
             onChange={handleNewBaseProductInput}
-            value={newBaseProduct.manufacturerID?.toString() || ""}
+            value={newBaseProduct.brandID?.toString() || ""}
           >
-            {loadingManufacturers ? (
+            {loadingBrands ? (
               <MenuItem>
                 <CircularProgress />
               </MenuItem>
             ) : (
-              manufacturers.length > 0 &&
-              manufacturers.map((manufacturer) => {
+              brands.length > 0 &&
+              brands.map((brand) => {
                 return (
-                  <MenuItem key={manufacturer.ID} value={manufacturer.ID}>
-                    {manufacturer.name}
+                  <MenuItem key={brand.ID} value={brand.ID}>
+                    {brand.name}
                   </MenuItem>
                 );
               })
             )}
             <Button
               onClick={() => {
-                handleOpenAddSelectDialog("Manufacturer");
+                handleOpenAddSelectDialog("Brand");
               }}
               fullWidth
               startIcon={<AddIcon />}
             >
-              Add New Manufacturer
+              Add New Brand
             </Button>
           </Select>
         </FormControl>

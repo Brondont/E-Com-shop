@@ -12,25 +12,25 @@ import {
   IconButton,
 } from "@mui/material";
 import { Filters } from "./types";
-import { Category, Manufacturer } from "../admin/products/BaseProductCreation";
+import { Category, Brand } from "../admin/products/BaseProductCreation";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
 interface ProductSearchSidebarProps {
   filters: Filters;
   categories: Category[];
-  manufacturers: Manufacturer[];
+  brands: Brand[];
   onFilterChange: (newFilters: Filters) => void;
 }
 
 export const ProductSearchSidebar: React.FC<ProductSearchSidebarProps> = ({
   filters,
   categories,
-  manufacturers,
+  brands,
   onFilterChange,
 }) => {
   const [categoriesExpanded, setCategoriesExpanded] = useState(true);
-  const [manufacturersExpanded, setManufacturersExpanded] = useState(true);
+  const [brandsExpanded, setBrandsExpanded] = useState(true); // Updated state
 
   // Handle category checkbox change
   const handleCategoryChange = (categoryId: number) => {
@@ -46,17 +46,15 @@ export const ProductSearchSidebar: React.FC<ProductSearchSidebarProps> = ({
     });
   };
 
-  // Handle manufacturer checkbox change
-  const handleManufacturerChange = (manufacturerId: number) => {
-    const newSelectedManufacturers = filters.selectedManufacturers.includes(
-      manufacturerId
-    )
-      ? filters.selectedManufacturers.filter((id) => id !== manufacturerId)
-      : [...filters.selectedManufacturers, manufacturerId];
+  // Handle brand checkbox change
+  const handleBrandChange = (brandId: number) => {
+    const newSelectedBrands = filters.selectedBrands.includes(brandId)
+      ? filters.selectedBrands.filter((id) => id !== brandId)
+      : [...filters.selectedBrands, brandId];
 
     onFilterChange({
       ...filters,
-      selectedManufacturers: newSelectedManufacturers,
+      selectedBrands: newSelectedBrands,
     });
   };
 
@@ -81,7 +79,7 @@ export const ProductSearchSidebar: React.FC<ProductSearchSidebarProps> = ({
             </IconButton>
           </Box>
           <Collapse in={categoriesExpanded}>
-            <List>
+            <List sx={{ maxHeight: "40vh", overflow: "auto" }}>
               {categories.map((category) => (
                 <ListItem key={category.ID} sx={{ py: 0 }}>
                   <FormControlLabel
@@ -101,7 +99,7 @@ export const ProductSearchSidebar: React.FC<ProductSearchSidebarProps> = ({
           </Collapse>
         </Box>
 
-        {/* Manufacturers Section */}
+        {/* Brands Section */}
         <Box>
           <Box
             sx={{
@@ -110,30 +108,26 @@ export const ProductSearchSidebar: React.FC<ProductSearchSidebarProps> = ({
               justifyContent: "space-between",
             }}
           >
-            <Typography variant="h6">Manufacturers</Typography>
+            <Typography variant="h6">Brands</Typography>
             <IconButton
               size="small"
-              onClick={() => setManufacturersExpanded(!manufacturersExpanded)}
+              onClick={() => setBrandsExpanded(!brandsExpanded)}
             >
-              {manufacturersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              {brandsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Box>
-          <Collapse in={manufacturersExpanded}>
-            <List>
-              {manufacturers.map((manufacturer) => (
-                <ListItem key={manufacturer.ID} sx={{ py: 0 }}>
+          <Collapse in={brandsExpanded}>
+            <List sx={{ maxHeight: "40vh", overflow: "auto" }}>
+              {brands.map((brand) => (
+                <ListItem key={brand.ID} sx={{ py: 0 }}>
                   <FormControlLabel
                     control={
                       <Checkbox
-                        checked={filters.selectedManufacturers.includes(
-                          manufacturer.ID
-                        )}
-                        onChange={() =>
-                          handleManufacturerChange(manufacturer.ID)
-                        }
+                        checked={filters.selectedBrands.includes(brand.ID)}
+                        onChange={() => handleBrandChange(brand.ID)}
                       />
                     }
-                    label={manufacturer.name}
+                    label={brand.name}
                   />
                 </ListItem>
               ))}

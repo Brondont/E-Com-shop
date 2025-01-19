@@ -19,38 +19,37 @@ type Category struct {
 	gorm.Model
 	Name        string    `json:"name" gorm:"type:varchar(100); not null"`
 	Description string    `json:"description" gorm:"type:text"`
-	Products    []Product `json:"products" gorm:"foreingKey:CategoryID"`
+	Products    []Product `json:"products" gorm:"foreignKey:CategoryID"`
 	Image       Image     `json:"image" gorm:"foreignKey:CategoryID"`
 }
 
-type Manufacturer struct {
+type Brand struct {
 	gorm.Model
 	Name        string    `json:"name" gorm:"type:varchar(100); not null; unique"`
 	Description string    `json:"description" gorm:"type:text; not null"`
-	Products    []Product `json:"products" gorm:"foreignKey:ManufacturerID"`
-	Image       Image     `json:"image" gorm:"foreignKey:ManufacturerID"`
+	Products    []Product `json:"products" gorm:"foreignKey:BrandID"`
+	Image       Image     `json:"image" gorm:"foreignKey:BrandID"`
 }
 
 type Image struct {
 	gorm.Model
-	VariantID      *uint  `json:"variantID" gorm:"index"`
-	ProductID      *uint  `json:"productID,omitempty" gorm:"index"`
-	ManufacturerID *uint  `json:"manufacturerID" gorm:"index"`
-	BrandID        *uint  `json:"brandID,omitempty" gorm:"index"`
-	CategoryID     *uint  `json:"categoryID,omitempty" gorm:"index"`
-	ImagePath      string `json:"imagePath" gorm:"type:text;not null"`
+	VariantID  *uint  `json:"variantID" gorm:"index"`
+	ProductID  *uint  `json:"productID,omitempty" gorm:"index"`
+	BrandID    *uint  `json:"brandID,omitempty" gorm:"index"`
+	CategoryID *uint  `json:"categoryID,omitempty" gorm:"index"`
+	ImagePath  string `json:"imagePath" gorm:"type:text;not null"`
 }
 
 type Product struct {
 	gorm.Model
-	Name           string       `json:"name" gorm:"type:varchar(100);not null"`
-	Description    string       `json:"description" gorm:"type:text"`
-	CategoryID     uint         `json:"categoryID"`
-	Category       Category     `json:"category" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	ManufacturerID uint         `json:"manufacturerID"`
-	Manufacturer   Manufacturer `json:"manufacturer" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	Image          Image        `json:"image" gorm:"foreignKey:ProductID"`
-	Variants       []Variant    `json:"variants" gorm:"foreignKey:ProductID"`
+	Name        string    `json:"name" gorm:"type:varchar(100);not null"`
+	Description string    `json:"description" gorm:"type:text"`
+	CategoryID  uint      `json:"categoryID"`
+	Category    Category  `json:"category" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	BrandID     uint      `json:"brandID"`
+	Brand       Brand     `json:"brand" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Image       Image     `json:"image" gorm:"foreignKey:ProductID"`
+	Variants    []Variant `json:"variants" gorm:"foreignKey:ProductID"`
 }
 
 type Variant struct {

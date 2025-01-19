@@ -16,7 +16,7 @@ func SetupRoutes(router *mux.Router) {
 
 	// General Routes
 	router.HandleFunc("/categories", generalHandler.GetCategories).Methods("GET")
-	router.HandleFunc("/manufacturers", generalHandler.GetManufacturers).Methods("GET")
+	router.HandleFunc("/brands", generalHandler.GetBrands).Methods("GET") // Updated endpoint
 	router.HandleFunc("/products", generalHandler.GetProducts).Methods("GET")
 	router.HandleFunc("/product/{productID}", generalHandler.GetProduct).Methods("GET")
 	router.HandleFunc("/variants/{productID}", generalHandler.GetVariants).Methods("GET")
@@ -36,7 +36,7 @@ func SetupRoutes(router *mux.Router) {
 	router.HandleFunc("/users", auth.IsAdmin(adminHandler.GetUsers)).Methods("GET")
 	router.HandleFunc("/users/{userID}", auth.IsAdmin(adminHandler.DeleteUser)).Methods("DELETE")
 	router.HandleFunc("/category", auth.IsAdmin(adminHandler.PostCategory)).Methods("POST")
-	router.HandleFunc("/manufacturer", auth.IsAdmin(adminHandler.PostManufacturer)).Methods("POST")
+	router.HandleFunc("/brand", auth.IsAdmin(adminHandler.PostBrand)).Methods("POST") // Updated endpoint
 	router.HandleFunc("/product", auth.IsAdmin(adminHandler.PostProduct)).Methods("POST")
 
 	router.HandleFunc("/variant", auth.IsAdmin(adminHandler.PostVariant)).Methods("POST")
@@ -46,11 +46,9 @@ func SetupRoutes(router *mux.Router) {
 	// Auth Routes
 	router.HandleFunc("/login", userHandler.PostLogin).Methods("POST")
 	router.HandleFunc("/signup", userHandler.PostSignup).Methods("POST")
-
 }
 
 func SetupStaticRoutes(router *mux.Router) {
-
 	router.PathPrefix("/public/").Handler(
 		http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))),
 	)

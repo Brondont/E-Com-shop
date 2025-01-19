@@ -36,7 +36,7 @@ func ConnectDB() {
 	db.AutoMigrate(
 		&models.User{},
 		&models.Category{},
-		&models.Manufacturer{},
+		&models.Brand{},
 		&models.Product{},
 		&models.Address{},
 		&models.Order{},

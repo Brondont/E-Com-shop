@@ -21,7 +21,6 @@ services:
       - shop
     depends_on:
       - shopgl_server
-    restart: always
     ports:
       - "3000:3000"
   shopgl_server:
@@ -42,7 +41,6 @@ services:
       - shop
     depends_on:
       - db
-    restart: always
   db:
     image: postgres:15-alpine
     environment:
@@ -51,7 +49,6 @@ services:
       - POSTGRES_DB=ecomdb
     ports:
       - "5432:5432"
-    restart: always
     networks:
       - shop
     volumes:
@@ -63,7 +60,6 @@ services:
       retries: 5
   pgadmin:
     image: dpage/pgadmin4
-    restart: always
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@admin.com
       - PGADMIN_DEFAULT_PASSWORD=admin

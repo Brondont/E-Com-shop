@@ -155,7 +155,7 @@ const BaseProductPreview: React.FC<BaseProductPreviewProps> = ({ product }) => {
               />
               <Chip
                 icon={<FactoryIcon />}
-                label={product.manufacturer?.name || "Unknown manufacturer"}
+                label={product.brand?.name || "Unknown brand"}
                 variant="outlined"
                 sx={{
                   borderColor: alpha(theme.palette.secondary.main, 0.2),

@@ -1,20 +1,22 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Box, Button, Typography, useTheme, Container } from "@mui/material";
 import CategoryCard from "../components/cards/categoriesCard/CategoriesCard";
-import ManufacturerCard from "../components/cards/manufacturersCard/ManufacturersCard";
+import BrandCard from "../components/cards/brandCard/BrandCard"; // Updated import
 import {
   Category,
-  Manufacturer,
+  Brand,
 } from "../components/admin/products/BaseProductCreation";
 import CardGrid from "../components/cards/cardGrid/CardGrid";
 import Scene from "../components/modelViewer/ModelViewer";
+import { useNavigate } from "react-router-dom";
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]); // Updated state
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [loadingManufacturers, setLoadingManufacturers] = useState(true);
+  const [loadingBrands, setLoadingBrands] = useState(true); // Updated state
+  const navigate = useNavigate();
 
   const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -27,31 +29,32 @@ const HomePage: React.FC = () => {
       }
       setCategories(resData.categories);
     } catch (error) {
+      console.error("Failed to fetch categories:", error);
     } finally {
       setLoadingCategories(false);
     }
   }, [apiUrl]);
 
-  const fetchManufacturers = useCallback(async () => {
+  const fetchBrands = useCallback(async () => {
     try {
-      const res = await fetch(`${apiUrl}/manufacturers?count=5`);
+      const res = await fetch(`${apiUrl}/brands?count=5`); // Updated endpoint
       const resData = await res.json();
       if (resData.error) {
         throw resData.error;
       }
-      setManufacturers(resData.manufacturers);
+      setBrands(resData.brands); // Updated state
     } catch (error) {
-      console.error("Failed to fetch manufacturers:", error);
+      console.error("Failed to fetch brands:", error);
     } finally {
-      setLoadingManufacturers(false);
+      setLoadingBrands(false); // Updated state
     }
   }, [apiUrl]);
 
-  // Fetch categories
+  // Fetch categories and brands
   useEffect(() => {
     fetchCategories();
-    fetchManufacturers();
-  }, [apiUrl, fetchCategories, fetchManufacturers]);
+    fetchBrands();
+  }, [apiUrl, fetchCategories, fetchBrands]);
 
   return (
     <Box
@@ -107,30 +110,6 @@ const HomePage: React.FC = () => {
             Explore top-quality computers, accessories, and IT equipment at
             unbeatable prices. Shop now and experience the future of technology!
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              justifyContent: { xs: "center", md: "flex-start" },
-            }}
-          >
-            <Button
-              variant="contained"
-              color="secondary"
-              size="large"
-              sx={{ px: 4, py: 2 }}
-            >
-              Shop Now
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="large"
-              sx={{ px: 4, py: 2 }}
-            >
-              Learn More
-            </Button>
-          </Box>
         </Box>
 
         <Box
@@ -146,6 +125,7 @@ const HomePage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* Categories Section */}
       <Box
         id="Categories"
         sx={{
@@ -167,12 +147,20 @@ const HomePage: React.FC = () => {
         </Typography>
         <CardGrid
           items={loadingCategories ? undefined : categories}
-          renderCard={(category) => <CategoryCard category={category} />}
+          renderCard={(category) => (
+            <CategoryCard
+              onClick={() => {
+                navigate(`/search?categories=${category.ID}`);
+              }}
+              category={category}
+            />
+          )}
         />
       </Box>
 
+      {/* Brands Section */}
       <Box
-        id="Manufacturers"
+        id="Brands"
         sx={{
           width: "100%",
           p: 8,
@@ -188,12 +176,17 @@ const HomePage: React.FC = () => {
             mb: 4,
           }}
         >
-          Popular Manufacturers
+          Popular Brands
         </Typography>
         <CardGrid
-          items={loadingManufacturers ? undefined : manufacturers}
-          renderCard={(manufacturer) => (
-            <ManufacturerCard manufacturer={manufacturer} />
+          items={loadingBrands ? undefined : brands} // Updated state
+          renderCard={(brand) => (
+            <BrandCard // Updated component
+              brand={brand} // Updated prop
+              onClick={() => {
+                navigate(`/search?brands=${brand.ID}`); // Updated query param
+              }}
+            />
           )}
         />
       </Box>

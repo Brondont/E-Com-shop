@@ -9,7 +9,6 @@ interface ProductGridProps {
   products: BaseProductData[];
   currentPage: number;
   totalPages: number;
-  itemsPerPage: number;
   onPageChange: (page: number) => void;
   loading: boolean;
 }
@@ -18,7 +17,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   currentPage,
   totalPages,
-  itemsPerPage,
   onPageChange,
   loading,
 }) => {
@@ -30,49 +28,66 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   return (
     <Box>
-      {/* Loading Indicator */}
-      {loading && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "300px",
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* Product Grid */}
       <Box
         sx={{
           display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexWrap: "wrap",
           gap: 3,
-          justifyContent: "flex-start",
           mb: 3,
         }}
       >
-        {products.map((product) => (
-          <Box
-            key={product.ID}
-            sx={{
-              flex: "1 1 calc(25% - 24px)",
-              minWidth: "250px",
-              maxWidth: "25%",
-            }}
-          >
-            <ProductCard
-              onClick={handleProductClick}
-              product={product}
-              loading={loading}
-            />
-          </Box>
-        ))}
+        {loading ? (
+          <>
+            <Box
+              sx={{
+                flex: "1 1 calc(25% - 24px)",
+                minWidth: "250px",
+                maxWidth: "25%",
+              }}
+            >
+              <ProductCard onClick={handleProductClick} loading={loading} />
+            </Box>
+            <Box
+              sx={{
+                flex: "1 1 calc(25% - 24px)",
+                minWidth: "250px",
+                maxWidth: "25%",
+              }}
+            >
+              <ProductCard onClick={handleProductClick} loading={loading} />
+            </Box>
+            <Box
+              sx={{
+                flex: "1 1 calc(25% - 24px)",
+                minWidth: "250px",
+                maxWidth: "25%",
+              }}
+            >
+              <ProductCard onClick={handleProductClick} loading={loading} />
+            </Box>
+          </>
+        ) : (
+          products.map((product) => (
+            <Box
+              key={product.ID}
+              sx={{
+                flex: "1 1 calc(25% - 24px)",
+                minWidth: "250px",
+                maxWidth: "25%",
+              }}
+            >
+              <ProductCard
+                onClick={handleProductClick}
+                product={product}
+                loading={loading}
+              />
+            </Box>
+          ))
+        )}
       </Box>
 
-      {/* Pagination */}
       {!loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <Pagination

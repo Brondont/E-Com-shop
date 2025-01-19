@@ -1,4 +1,4 @@
-import { Manufacturer, Category } from "../admin/products/BaseProductCreation";
+import { Brand, Category } from "../admin/products/BaseProductCreation";
 
 // src/components/ProductSearch/types.ts
 export interface Product {
@@ -12,5 +12,5 @@ export interface Product {
 export interface Filters {
   searchQuery: string;
   selectedCategories: number[];
-  selectedManufacturers: number[];
+  selectedBrands: number[];
 }

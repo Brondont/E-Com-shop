@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Brondont/E-Com-shop/db"
 	"github.com/Brondont/E-Com-shop/models"
@@ -50,10 +51,10 @@ func (h *GeneralHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *GeneralHandler) GetManufacturers(w http.ResponseWriter, r *http.Request) {
+func (h *GeneralHandler) GetBrands(w http.ResponseWriter, r *http.Request) {
 	count := r.URL.Query().Get("count")
 
-	var manufacturers []models.Manufacturer
+	var brands []models.Brand
 	query := db.DB.DB.Preload("Image")
 
 	// If count is provided, limit the number of results
@@ -66,15 +67,15 @@ func (h *GeneralHandler) GetManufacturers(w http.ResponseWriter, r *http.Request
 		query = query.Limit(limit)
 	}
 
-	result := query.Find(&manufacturers)
+	result := query.Find(&brands)
 	if result.Error != nil {
-		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting manufacturers, try again"))
+		utils.WriteError(w, http.StatusInternalServerError, errors.New("something went wrong with getting brands, try again"))
 		return
 	}
 
 	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
-		"message":       "Successfully fetched results",
-		"manufacturers": manufacturers,
+		"message": "Successfully fetched results",
+		"brands":  brands,
 	})
 }
 
@@ -99,8 +100,6 @@ func (h *GeneralHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	search := r.URL.Query().Get("search")
-	// categoriesIDs := r.URL.Query().Get("categoriesIDs")
-	// manufacturersIDs := r.URL.Query().Get("manufacturersIDs")
 
 	// Default values for pagination
 	if page < 1 {
@@ -117,14 +116,52 @@ func (h *GeneralHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * limit
 	// Initialize the base query
 
-	baseQuery := db.DB.DB.Model(&models.Product{}).Preload("Image").Preload("Category").Preload("Manufacturer")
+	baseQuery := db.DB.DB.Model(&models.Product{}).Preload("Image").Preload("Category").Preload("Brand")
 
 	// Apply search filter if provided
 	if search != "" {
-		searchPattern := "%" + search + "%"
+		searchPattern := "%" + strings.ToLower(search) + "%"
 		baseQuery = baseQuery.Where(
-			"name LIKE ?", searchPattern,
+			"LOWER(name) LIKE ?", searchPattern,
 		)
+	}
+
+	// category
+	categoriesIDs := r.URL.Query().Get("categoriesIDs")
+	if categoriesIDs != "" {
+		// Split the comma-separated string into a slice of strings
+		categoryIDsStr := strings.Split(categoriesIDs, ",")
+		var categoryIDs []int
+		for _, idStr := range categoryIDsStr {
+			id, err := strconv.Atoi(idStr)
+			if err == nil {
+				categoryIDs = append(categoryIDs, id)
+			}
+		}
+
+		// Apply the filter if there are valid category IDs
+		if len(categoryIDs) > 0 {
+			baseQuery = baseQuery.Where("category_id IN ?", categoryIDs)
+		}
+	}
+
+	// brand
+	brandsIDs := r.URL.Query().Get("brandsIDs")
+	if brandsIDs != "" {
+		// Split the comma-separated string into a slice of strings
+		brandIDsStr := strings.Split(brandsIDs, ",")
+		var brandIDs []int
+		for _, idStr := range brandIDsStr {
+			id, err := strconv.Atoi(idStr)
+			if err == nil {
+				brandIDs = append(brandIDs, id)
+			}
+		}
+
+		// Apply the filter if there are valid brand IDs
+		if len(brandIDs) > 0 {
+			baseQuery = baseQuery.Where("brand_id IN ?", brandIDs)
+		}
 	}
 
 	// Fetch total number of products

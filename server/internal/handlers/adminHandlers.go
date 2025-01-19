@@ -176,13 +176,12 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
-		"message":  "Category created succesfully",
+		"message":  "Category created successfully",
 		"category": categoryPayload,
 	})
-
 }
 
-func (h *AdminHandler) PostManufacturer(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
@@ -201,19 +200,19 @@ func (h *AdminHandler) PostManufacturer(w http.ResponseWriter, r *http.Request) 
 		}
 	}()
 
-	// handle category creation
-	var manufacturerPayload models.Manufacturer
-	manufacturerPayload.Name = formData.Fields["name"][0]
-	manufacturerPayload.Description = formData.Fields["description"][0]
+	// handle brand creation
+	var brandPayload models.Brand
+	brandPayload.Name = formData.Fields["name"][0]
+	brandPayload.Description = formData.Fields["description"][0]
 
-	if manufacturerPayload.Name == "" || manufacturerPayload.Description == "" {
+	if brandPayload.Name == "" || brandPayload.Description == "" {
 		tx.Rollback()
 		err := errors.New("form fields unprovided")
 		utils.WriteError(w, http.StatusConflict, err)
 		return
 	}
 
-	result := tx.Create(&manufacturerPayload)
+	result := tx.Create(&brandPayload)
 	if result.Error != nil {
 		tx.Rollback()
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
@@ -228,7 +227,7 @@ func (h *AdminHandler) PostManufacturer(w http.ResponseWriter, r *http.Request) 
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
-	imagePayload.ManufacturerID = &manufacturerPayload.ID
+	imagePayload.BrandID = &brandPayload.ID
 
 	result = tx.Create(&imagePayload)
 	if result.Error != nil {
@@ -245,8 +244,8 @@ func (h *AdminHandler) PostManufacturer(w http.ResponseWriter, r *http.Request) 
 	}
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
-		"message":      "Category created succesfully",
-		"manufacturer": manufacturerPayload,
+		"message": "Brand created successfully",
+		"brand":   brandPayload,
 	})
 }
 
@@ -276,7 +275,7 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle category creation
+	// handle product creation
 	var productPayload models.Product
 	productPayload.Name = formData.Fields["name"][0]
 	productPayload.Description = formData.Fields["description"][0]
@@ -287,13 +286,13 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	productPayload.CategoryID = uint(categoryIDInt)
-	manufacturerID, err := strconv.Atoi(formData.Fields["manufacturerID"][0])
+	brandID, err := strconv.Atoi(formData.Fields["brandID"][0])
 	if err != nil {
 		tx.Rollback()
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
-	productPayload.ManufacturerID = uint(manufacturerID)
+	productPayload.BrandID = uint(brandID)
 
 	result := tx.Create(&productPayload)
 	if result.Error != nil {
@@ -327,7 +326,7 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
-		"message": "Product created succesfully",
+		"message": "Product created successfully",
 		"product": productPayload,
 	})
 }
@@ -358,7 +357,7 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle category creation
+	// handle variant creation
 	var variantPayload models.Variant
 	variantPayload.Name = formData.Fields["name"][0]
 	variantPayload.Description = formData.Fields["description"][0]
@@ -451,7 +450,7 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
-		"message": "Product created succesfully",
+		"message": "Variant created successfully",
 		"variant": completeVariant,
 	})
 }
@@ -476,9 +475,8 @@ func (h *AdminHandler) DeleteVariant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
-		"message": "Product created succesfully",
+		"message": "Variant deleted successfully",
 	})
-
 }
 
 func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {

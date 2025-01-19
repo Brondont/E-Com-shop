@@ -95,6 +95,10 @@ const App: React.FC = () => {
     handleLogin(token);
   }, [handleLogin]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
   const getRoutes = () => {
     return (
       <>
