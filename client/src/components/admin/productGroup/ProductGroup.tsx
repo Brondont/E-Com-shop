@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import GroupDialog, { GroupDialogDataProps } from "./GroupDialog";
 import { useFeedback } from "../../../FeedbackAlertContext";
+import ConfirmationDialog from "../../confirmationDialog/ConfirmationDialog";
 
 interface BaseItem {
   ID: number;
@@ -53,6 +54,18 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
     newImage: null,
     existingImage: null,
   });
+  const [confirmationDialogData, setConfirmationDialogData] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<BaseItem | null>(null);
   const [page, setPage] = useState(0);
@@ -99,7 +112,25 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
     setIsEdit(false);
   };
 
+  const validateSubmitForm = (): string => {
+    if (groupDialogData.name === "") {
+      return "Name is required";
+    }
+    if (groupDialogData.description === "") {
+      return "Description is required";
+    }
+    if (!groupDialogData.newImage) {
+      return "Logo is required";
+    }
+    return "";
+  };
+
   const handleSubmit = async () => {
+    const err = validateSubmitForm();
+    if (err !== "") {
+      showFeedback(err, false);
+      return;
+    }
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -156,7 +187,7 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
     }
   };
 
-  const handleDeleteClick = async (ID: number) => {
+  const handleDelete = async (ID: number) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -176,6 +207,7 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
 
       showFeedback(`Deleting the ${name} was successfull!`, true);
       handleUpdateItems(items.filter((item) => item.ID !== ID));
+      setConfirmationDialogData((prev) => ({ ...prev, open: false }));
     } catch (err) {
       if (err.msg) showFeedback(err.msg, false);
       else
@@ -183,6 +215,15 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDeleteClick = async (ID: number) => {
+    setConfirmationDialogData({
+      open: true,
+      title: "Confirm Delete",
+      message: `Are you sure you want to delete the ${name} with ID ${ID}?`,
+      onConfirm: () => handleDelete(ID),
+    });
   };
 
   const handleChangePage = (
@@ -300,6 +341,15 @@ const ProductGroup: React.FC<ProductGroupProps<BaseItem>> = ({
           />
         </CardContent>
       </Card>
+      <ConfirmationDialog
+        open={confirmationDialogData.open}
+        onClose={() =>
+          setConfirmationDialogData((prev) => ({ ...prev, open: false }))
+        }
+        onConfirm={confirmationDialogData.onConfirm}
+        title={confirmationDialogData.title}
+        message={confirmationDialogData.message}
+      />
       <GroupDialog
         groupDialogData={groupDialogData}
         setGroupDialogData={setGroupDialogData}
