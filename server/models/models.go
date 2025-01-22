@@ -25,7 +25,7 @@ type Category struct {
 
 type Brand struct {
 	gorm.Model
-	Name        string    `json:"name" gorm:"type:varchar(100); not null; unique"`
+	Name        string    `json:"name" gorm:"type:varchar(100); not null"`
 	Description string    `json:"description" gorm:"type:text; not null"`
 	Products    []Product `json:"products" gorm:"foreignKey:BrandID"`
 	Image       Image     `json:"image" gorm:"foreignKey:BrandID"`

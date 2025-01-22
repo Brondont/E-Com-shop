@@ -283,7 +283,7 @@ const UserManagement: React.FC = () => {
           <TextField
             fullWidth
             variant="outlined"
-            placeholder="Search by Username or Email or Phone Number"
+            placeholder="Search by Username, Email or Phone Number"
             value={searchQuery}
             onChange={handleSearch}
             sx={{ mb: 3 }}

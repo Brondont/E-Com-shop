@@ -29,14 +29,16 @@ func NewAdminHandler() *AdminHandler {
 	}
 }
 
+// ======================
+// User Management
+// ======================
+
 func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	// Parse query parameters
 	query := r.URL.Query()
 	page, _ := strconv.Atoi(query.Get("page"))
 	limit, _ := strconv.Atoi(query.Get("limit"))
 	search := query.Get("search")
 
-	// Set default values if not provided
 	if page < 1 {
 		page = 1
 	}
@@ -44,16 +46,12 @@ func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 
-	// Calculate offset
 	offset := (page - 1) * limit
 
-	// Initialize the base query
 	baseQuery := db.DB.DB.Model(&models.User{}).Select(
 		"id", "email", "username", "created_at", "phone_number", "is_admin",
-		// Add other non-sensitive fields you want to return
 	)
 
-	// Apply search filter if provided
 	if search != "" {
 		searchPattern := "%" + search + "%"
 		baseQuery = baseQuery.Where(
@@ -62,14 +60,12 @@ func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	// Get total count for pagination
 	var total int64
 	if err := baseQuery.Count(&total).Error; err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, errors.New("error counting users"))
 		return
 	}
 
-	// Get paginated users
 	var users []models.User
 	result := baseQuery.Limit(limit).Offset(offset).Find(&users)
 	if result.Error != nil {
@@ -77,10 +73,8 @@ func (h *AdminHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Calculate total pages
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
 
-	// Prepare response
 	response := map[string]interface{}{
 		"users": users,
 		"pagination": map[string]interface{}{
@@ -114,15 +108,17 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ======================
+// Category Management
+// ======================
+
 func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
 		return
 	}
 
-	// Start transaction
 	tx := db.DB.DB.Begin()
 	if tx.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, tx.Error)
@@ -134,7 +130,6 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle category creation
 	var categoryPayload models.Category
 	categoryPayload.Name = formData.Fields["name"][0]
 	categoryPayload.Description = formData.Fields["description"][0]
@@ -151,7 +146,6 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// handle image creation
 	var imagePayload models.Image
 	imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
 	if err != nil {
@@ -168,8 +162,14 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Commit transaction
 	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedCategory models.Category
+	result = db.DB.DB.Preload("Image").First(&updatedCategory, categoryPayload.ID)
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
@@ -177,12 +177,11 @@ func (h *AdminHandler) PostCategory(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
 		"message":  "Category created successfully",
-		"category": categoryPayload,
+		"category": updatedCategory,
 	})
 }
 
-func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart form
+func (h *AdminHandler) PutCategory(w http.ResponseWriter, r *http.Request) {
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
@@ -200,7 +199,116 @@ func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle brand creation
+	categoryID, err := strconv.Atoi(formData.Fields["ID"][0])
+	if err != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid category ID: %w", err))
+		return
+	}
+
+	var oldCategory models.Category
+	result := tx.Preload("Image").First(&oldCategory, categoryID)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("category not found: %w", result.Error))
+		return
+	}
+
+	oldCategory.Name = formData.Fields["name"][0]
+	oldCategory.Description = formData.Fields["description"][0]
+
+	result = tx.Save(&oldCategory)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	if formData.File != nil {
+		var imagePayload models.Image
+		imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
+		if err != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+		imagePayload.CategoryID = &oldCategory.ID
+
+		result := tx.Delete(&models.Image{}, "category_id = ?", oldCategory.ID)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		result = tx.Create(&imagePayload)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+	}
+
+	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedCategory models.Category
+	result = db.DB.DB.Preload("Image").First(&updatedCategory, oldCategory.ID)
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message":  "Category updated successfully",
+		"category": updatedCategory,
+	})
+}
+
+func (h *AdminHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	categoryID := vars["categoryID"]
+
+	if categoryID == "" {
+		utils.WriteError(w, http.StatusBadRequest, errors.New("category id is missing in the url"))
+		return
+	}
+
+	result := db.DB.DB.Where("id = ?", categoryID).Delete(&models.Category{})
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "Category was deleted.",
+	})
+}
+
+// ======================
+// Brand Management
+// ======================
+func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
+	formData, err := utils.ParseMultipartForm(r, maxFileSize)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
+		return
+	}
+
+	tx := db.DB.DB.Begin()
+	if tx.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, tx.Error)
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var brandPayload models.Brand
 	brandPayload.Name = formData.Fields["name"][0]
 	brandPayload.Description = formData.Fields["description"][0]
@@ -219,7 +327,6 @@ func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// handle image creation
 	var imagePayload models.Image
 	imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
 	if err != nil {
@@ -236,8 +343,14 @@ func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Commit transaction
 	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedBrand models.Brand
+	result = db.DB.DB.Preload("Image").First(&updatedBrand, brandPayload.ID)
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
@@ -245,19 +358,11 @@ func (h *AdminHandler) PostBrand(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
 		"message": "Brand created successfully",
-		"brand":   brandPayload,
+		"brand":   updatedBrand,
 	})
 }
 
-func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
-	_, ok := r.Context().Value("userID").(int)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
-		return
-	}
-
-	// Parse multipart form
+func (h *AdminHandler) PutBrand(w http.ResponseWriter, r *http.Request) {
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
@@ -275,7 +380,123 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle product creation
+	brandID, err := strconv.Atoi(formData.Fields["ID"][0])
+	if err != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid brand ID: %w", err))
+		return
+	}
+
+	var oldBrand models.Brand
+	result := tx.Preload("Image").First(&oldBrand, brandID)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("brand not found: %w", result.Error))
+		return
+	}
+
+	oldBrand.Name = formData.Fields["name"][0]
+	oldBrand.Description = formData.Fields["description"][0]
+
+	result = tx.Save(&oldBrand)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	if formData.File != nil {
+		var imagePayload models.Image
+		imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
+		if err != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+		imagePayload.BrandID = &oldBrand.ID
+
+		result := tx.Delete(&models.Image{}, "brand_id = ?", oldBrand.ID)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		result = tx.Create(&imagePayload)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+	}
+
+	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedBrand models.Brand
+	result = db.DB.DB.Preload("Image").First(&updatedBrand, oldBrand.ID)
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "Brand updated successfully",
+		"brand":   updatedBrand,
+	})
+}
+
+func (h *AdminHandler) DeleteBrand(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	brandID := vars["brandID"]
+
+	if brandID == "" {
+		utils.WriteError(w, http.StatusBadRequest, errors.New("brand id is missing in the url"))
+		return
+	}
+
+	result := db.DB.DB.Where("id = ?", brandID).Delete(&models.Brand{})
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "Brand was deleted.",
+	})
+}
+
+// ======================
+// Product Management
+// ======================
+
+func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
+	_, ok := r.Context().Value("userID").(int)
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
+		return
+	}
+
+	formData, err := utils.ParseMultipartForm(r, maxFileSize)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
+		return
+	}
+
+	tx := db.DB.DB.Begin()
+	if tx.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, tx.Error)
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var productPayload models.Product
 	productPayload.Name = formData.Fields["name"][0]
 	productPayload.Description = formData.Fields["description"][0]
@@ -301,7 +522,6 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// handle image creation
 	var imagePayload models.Image
 	imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
 	if err != nil {
@@ -318,8 +538,14 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Commit transaction
 	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedProduct models.Product
+	result = db.DB.DB.Preload("Image").First(&updatedProduct, productPayload.ID)
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
@@ -327,19 +553,143 @@ func (h *AdminHandler) PostProduct(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
 		"message": "Product created successfully",
-		"product": productPayload,
+		"product": updatedProduct,
 	})
 }
 
+func (h *AdminHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
+	formData, err := utils.ParseMultipartForm(r, maxFileSize)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	tx := db.DB.DB.Begin()
+	if tx.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, tx.Error)
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	productID, err := strconv.Atoi(formData.Fields["productID"][0])
+	if err != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid product ID: %w", err))
+		return
+	}
+
+	var oldProduct models.Product
+	result := tx.Preload("Image").First(&oldProduct, productID)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("product not found: %w", result.Error))
+		return
+	}
+
+	oldProduct.Name = formData.Fields["name"][0]
+	oldProduct.Description = formData.Fields["description"][0]
+
+	categoryIDInt, err := strconv.Atoi(formData.Fields["categoryID"][0])
+	if err != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	oldProduct.CategoryID = uint(categoryIDInt)
+	brandID, err := strconv.Atoi(formData.Fields["brandID"][0])
+	if err != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	oldProduct.BrandID = uint(brandID)
+
+	result = tx.Save(&oldProduct)
+	if result.Error != nil {
+		tx.Rollback()
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	if formData.File != nil {
+		var imagePayload models.Image
+		imagePayload.ImagePath, err = utils.SaveUploadedFile(formData.File, uploadDirectory)
+		if err != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+		imagePayload.ProductID = &oldProduct.ID
+
+		result := tx.Delete(&models.Image{}, "product_id = ?", oldProduct.ID)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		result = tx.Create(&imagePayload)
+		if result.Error != nil {
+			tx.Rollback()
+			utils.WriteError(w, http.StatusInternalServerError, result.Error)
+			return
+		}
+	}
+
+	result = tx.Commit()
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	var updatedProduct models.Product
+	result = db.DB.DB.Preload("Image").First(&updatedProduct, oldProduct.ID)
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "Product updated successfully",
+		"product": updatedProduct,
+	})
+}
+
+func (h *AdminHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	productID := vars["productID"]
+
+	if productID == "" {
+		utils.WriteError(w, http.StatusBadRequest, errors.New("product id is missing in the url"))
+		return
+	}
+
+	result := db.DB.DB.Where("id = ?", productID).Delete(&models.Product{})
+	if result.Error != nil {
+		utils.WriteError(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"message": "Product was deleted.",
+	})
+}
+
+// ======================
+// Variant Management
+// ======================
+
 func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
 	_, ok := r.Context().Value("userID").(int)
 	if !ok {
 		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
 		return
 	}
 
-	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
@@ -357,7 +707,6 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// handle variant creation
 	var variantPayload models.Variant
 	variantPayload.Name = formData.Fields["name"][0]
 	variantPayload.Description = formData.Fields["description"][0]
@@ -376,7 +725,6 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 	}
 	variantPayload.ProductID = uint(productIDInt)
 
-	// insert 3d model if it exists
 	if formData.Model != nil {
 		modelPath, err := utils.SaveUploadedFile(formData.Model, modelUploadDirectory)
 		if err != nil {
@@ -394,7 +742,6 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// handle images creation
 	for _, fileHeader := range formData.Files {
 		var imagePayload models.Image
 		imagePayload.ImagePath, err = utils.SaveUploadedFile(fileHeader, uploadDirectory)
@@ -413,7 +760,6 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// handle inventory creation
 	quantity, err := strconv.Atoi(formData.Fields["quantity"][0])
 	if err != nil {
 		tx.Rollback()
@@ -431,7 +777,6 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Commit transaction
 	result = tx.Commit()
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
@@ -439,36 +784,23 @@ func (h *AdminHandler) PostVariant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var completeVariant models.Variant
-	result = db.DB.DB.
-		Preload("Images").
-		Preload("Inventory").
-		First(&completeVariant, variantPayload.ID)
-
+	result = db.DB.DB.Preload("Images").Preload("Inventory").First(&completeVariant, variantPayload.ID)
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
 	}
 
 	utils.WriteJson(w, http.StatusCreated, map[string]interface{}{
-		"message": "Variant created successfully",
+		"message": "Product created successfully",
 		"variant": completeVariant,
 	})
 }
 
 func (h *AdminHandler) DeleteVariant(w http.ResponseWriter, r *http.Request) {
-	_, ok := r.Context().Value("userID").(int)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
-		return
-	}
-
 	vars := mux.Vars(r)
 	variantID := vars["variantID"]
 
-	// Attempt to delete the variant from the database
 	result := db.DB.DB.Delete(&models.Variant{}, "id = ?", variantID)
-
-	// Check for errors in the delete operation
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
@@ -480,21 +812,18 @@ func (h *AdminHandler) DeleteVariant(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
 	_, ok := r.Context().Value("userID").(int)
 	if !ok {
 		utils.WriteError(w, http.StatusUnauthorized, errors.New("unauthorized access"))
 		return
 	}
 
-	// Parse multipart form
 	formData, err := utils.ParseMultipartForm(r, maxFileSize)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
 		return
 	}
 
-	// Start a database transaction
 	tx := db.DB.DB.Begin()
 	if tx.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, tx.Error)
@@ -506,7 +835,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Get the variant ID from the form data
 	variantID, err := strconv.Atoi(formData.Fields["variantID"][0])
 	if err != nil {
 		tx.Rollback()
@@ -514,7 +842,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the old variant
 	var oldVariant models.Variant
 	result := tx.Preload("Images").Preload("Inventory").First(&oldVariant, variantID)
 	if result.Error != nil {
@@ -523,7 +850,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the variant fields
 	oldVariant.Name = formData.Fields["name"][0]
 	oldVariant.Description = formData.Fields["description"][0]
 	priceFloat64, err := strconv.ParseFloat(formData.Fields["price"][0], 64)
@@ -534,7 +860,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 	}
 	oldVariant.Price = priceFloat64
 
-	// Update the inventory quantity
 	quantity, err := strconv.Atoi(formData.Fields["quantity"][0])
 	if err != nil {
 		tx.Rollback()
@@ -543,7 +868,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 	}
 	oldVariant.Inventory.Quantity = uint(quantity)
 
-	// update 3d model if it exists
 	if formData.Model != nil {
 		modelPath, err := utils.SaveUploadedFile(formData.Model, modelUploadDirectory)
 		if err != nil {
@@ -554,7 +878,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		oldVariant.ModelUrl = modelPath
 	}
 
-	// Save the updated variant
 	result = tx.Save(&oldVariant)
 	if result.Error != nil {
 		tx.Rollback()
@@ -563,12 +886,7 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingImageIDs := make(map[uint]bool)
-
-	// Check if "existingImages" field exists and is not empty
 	existingImagesStr := formData.Fields["existingImages"]
-	fmt.Println("These are the strings: \n\n\n\\")
-	fmt.Print(existingImagesStr)
-	// Split the string into individual image IDs
 
 	for _, imageIDStr := range existingImagesStr {
 		imageID, err := strconv.Atoi(imageIDStr)
@@ -580,7 +898,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		existingImageIDs[uint(imageID)] = true
 	}
 
-	// Remove images that are no longer part of the existingImages array
 	for _, image := range oldVariant.Images {
 		if !existingImageIDs[image.ID] {
 			result := tx.Delete(&image)
@@ -592,7 +909,6 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Handle new images
 	for _, fileHeader := range formData.Files {
 		var imagePayload models.Image
 		imagePayload.ImagePath, err = utils.SaveUploadedFile(fileHeader, uploadDirectory)
@@ -611,26 +927,19 @@ func (h *AdminHandler) PutVariant(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Commit the transaction
 	result = tx.Commit()
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
 	}
 
-	// Fetch the updated variant with its images and inventory
 	var updatedVariant models.Variant
-	result = db.DB.DB.
-		Preload("Images").
-		Preload("Inventory").
-		First(&updatedVariant, oldVariant.ID)
-
+	result = db.DB.DB.Preload("Images").Preload("Inventory").First(&updatedVariant, oldVariant.ID)
 	if result.Error != nil {
 		utils.WriteError(w, http.StatusInternalServerError, result.Error)
 		return
 	}
 
-	// Return the updated variant
 	utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"message": "Variant updated successfully",
 		"variant": updatedVariant,

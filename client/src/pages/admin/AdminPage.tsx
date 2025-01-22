@@ -12,6 +12,12 @@ import PeopleIcon from "@mui/icons-material/People";
 import ViewQuiltIcon from "@mui/icons-material/ViewQuilt";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import VariantManagement from "../../components/admin/products/VariantManagement";
+import AppsIcon from "@mui/icons-material/Apps";
+import PhonelinkIcon from "@mui/icons-material/Phonelink";
+import VerifiedIcon from "@mui/icons-material/Verified";
+
+import GroupCategory from "../../components/admin/productGroup/GroupCategory";
+import GroupBrand from "../../components/admin/productGroup/GroupBrand";
 
 interface AdminSpaceProps {
   handleLogout: () => void;
@@ -35,6 +41,25 @@ const SideBarSections: Section[] = [
           name: "Product Variant",
           path: "products/product-variants",
           icon: <TableChartIcon />,
+        },
+      ],
+    },
+  },
+  {
+    name: "Product Group",
+    path: "product-groups",
+    icon: <AppsIcon />,
+    subSection: {
+      sections: [
+        {
+          name: "Categories",
+          path: "products/categories",
+          icon: <PhonelinkIcon />,
+        },
+        {
+          name: "Brand",
+          path: "products/brands",
+          icon: <VerifiedIcon />,
         },
       ],
     },
@@ -69,6 +94,10 @@ const AdminPage: React.FC<AdminSpaceProps> = ({ handleLogout, user }) => {
         return <VariantManagement />;
       case "users":
         return <UserManagement />;
+      case "products/categories":
+        return <GroupCategory />;
+      case "products/brands":
+        return <GroupBrand />;
       default:
         return <Dashboard />;
     }

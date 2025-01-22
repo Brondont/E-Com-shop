@@ -23,32 +23,19 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { useFeedback } from "../../../FeedbackAlertContext"; // Adjust the path as needed
-import { Image } from "./VariantsTable";
+import { Image } from "../../types/types";
+import { Brand } from "../productGroup/GroupBrand";
+import { Category } from "../productGroup/GroupCategory";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Quill's CSS
-
-// TODO: Separate the logic for creating brands/categories for the ability to create editing for them.
 
 export interface BaseProductCreationData {
   name: string;
   description: string;
-  image: File | null;
+  newImage: File | null;
+  oldImage: Image;
   categoryID: number;
   brandID: number;
-}
-
-export interface Brand {
-  ID: number;
-  name: string;
-  description: string;
-  image: Image;
-}
-
-export interface Category {
-  ID: number;
-  name: string;
-  description: string;
-  image: Image;
 }
 
 interface SelectAddDialogProps {
@@ -66,6 +53,8 @@ interface BaseProductCreationProps {
   setNewBaseProduct: React.Dispatch<
     React.SetStateAction<BaseProductCreationData>
   >;
+  handleCancelEditing: () => void;
+  isEditingBaseProduct: boolean;
 }
 
 const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
@@ -73,6 +62,8 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
   submittingNewBaseProduct,
   setNewBaseProduct,
   handleSubmitNewBaseProduct,
+  isEditingBaseProduct,
+  handleCancelEditing,
 }) => {
   const theme = useTheme();
   const { showFeedback } = useFeedback();
@@ -116,7 +107,7 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
       setNewBaseProduct((prev) => {
         return {
           ...prev,
-          image: file,
+          newImage: file,
         };
       });
     }
@@ -302,7 +293,8 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
       description: "",
       categoryID: undefined,
       brandID: undefined,
-      image: null,
+      oldImage: null,
+      newImage: null,
     });
   };
 
@@ -315,7 +307,9 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
       }}
     >
       <Box>
-        <Typography variant="h6">Create A Base Product:</Typography>
+        <Typography variant="h6">
+          {isEditingBaseProduct ? "Update" : "Create"} A Base Product:
+        </Typography>
       </Box>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <FormControl>
@@ -446,12 +440,30 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
             accept="image/*"
           />
         </Button>
-        {newBaseProduct.image && (
+        {newBaseProduct.oldImage && (
           <Box>
-            <Typography variant="h6">Image Preview:</Typography>
+            <Typography variant="h6">Old Image Preview:</Typography>
             <Box sx={{ mt: 2, position: "relative", width: "fit-content" }}>
               <img
-                src={URL.createObjectURL(newBaseProduct.image)}
+                src={
+                  apiUrl.split("/api/")[0] + newBaseProduct.oldImage.imagePath
+                }
+                alt="Preview"
+                loading="lazy"
+                style={{
+                  height: 150,
+                  objectFit: "cover",
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+        {newBaseProduct.newImage && (
+          <Box>
+            <Typography variant="h6">New Image Preview:</Typography>
+            <Box sx={{ mt: 2, position: "relative", width: "fit-content" }}>
+              <img
+                src={URL.createObjectURL(newBaseProduct.newImage)}
                 alt="Preview"
                 loading="lazy"
                 style={{
@@ -462,7 +474,7 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
               <IconButton
                 onClick={() =>
                   setNewBaseProduct((prev) => {
-                    return { ...prev, image: null };
+                    return { ...prev, newImage: null };
                   })
                 }
                 sx={{
@@ -497,8 +509,14 @@ const BaseProductCreation: React.FC<BaseProductCreationProps> = ({
           gap: 2,
         }}
       >
-        <Button onClick={clearNewBaseProduct} variant="outlined" color="error">
-          Clear
+        <Button
+          onClick={
+            isEditingBaseProduct ? handleCancelEditing : clearNewBaseProduct
+          }
+          variant="outlined"
+          color="error"
+        >
+          {isEditingBaseProduct ? "Cancel" : "Clear"}
         </Button>
         <LoadingButton
           loading={submittingNewBaseProduct}

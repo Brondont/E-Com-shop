@@ -21,17 +21,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ImageIcon from "@mui/icons-material/Image";
+import { Image } from "../../types/types";
 import { formatDate, formatPrice } from "../../../util/formatters";
 import { BaseProductData } from "./BaseProduct";
 import { useFeedback } from "../../../FeedbackAlertContext";
 import VariantCreationDialog, {
   DialogProductVariantProps,
 } from "./VariantCreationDialog";
-
-export interface Image {
-  ID: number;
-  imagePath: string;
-}
 
 export interface VariantData {
   ID: number;

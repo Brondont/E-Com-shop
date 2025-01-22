@@ -2,10 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Box, Button, Typography, useTheme, Container } from "@mui/material";
 import CategoryCard from "../components/cards/categoriesCard/CategoriesCard";
 import BrandCard from "../components/cards/brandCard/BrandCard"; // Updated import
-import {
-  Category,
-  Brand,
-} from "../components/admin/products/BaseProductCreation";
+import { Category } from "../components/admin/productGroup/GroupCategory";
+import { Brand } from "../components/admin/productGroup/GroupBrand";
 import CardGrid from "../components/cards/cardGrid/CardGrid";
 import Scene from "../components/modelViewer/ModelViewer";
 import { useNavigate } from "react-router-dom";
@@ -85,7 +83,8 @@ const HomePage: React.FC = () => {
         {/* Hero Text */}
         <Box
           sx={{
-            maxWidth: { xs: "100%", md: "40%" }, // Adjust width for text
+            maxWidth: { xs: "100%", md: "60%" },
+
             display: "flex",
             flexDirection: "column",
             gap: 3,
@@ -117,7 +116,7 @@ const HomePage: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "100%",
+            width: { xs: "100%", md: "40%" },
             mt: { xs: 4, md: 0 },
           }}
         >

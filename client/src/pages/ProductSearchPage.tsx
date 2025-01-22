@@ -6,10 +6,8 @@ import ProductGrid from "../components/productSearch/ProductGrid";
 import { Filters } from "../components/productSearch/types";
 import { BaseProductData } from "../components/admin/products/BaseProduct";
 import { useFeedback } from "../FeedbackAlertContext";
-import {
-  Category,
-  Brand, // Updated import
-} from "../components/admin/products/BaseProductCreation";
+import { Brand } from "../components/admin/productGroup/GroupBrand";
+import { Category } from "../components/admin/productGroup/GroupCategory";
 
 export const ProductSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -188,7 +186,7 @@ export const ProductSearchPage: React.FC = () => {
         <Box sx={{ width: 280 }}>
           <ProductSearchSidebar
             categories={categories}
-            brands={brands} // Updated prop
+            brands={brands}
             filters={filters}
             onFilterChange={onFilterChange}
           />

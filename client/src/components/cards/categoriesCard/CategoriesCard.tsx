@@ -1,7 +1,7 @@
 // CategoryCard.tsx
 import React from "react";
 import BaseCard from "../baseCard/BaseCard";
-import { Category } from "../../admin/products/BaseProductCreation";
+import { Category } from "../../admin/productGroup/GroupCategory";
 
 interface CategoryCardProps {
   category?: Category;

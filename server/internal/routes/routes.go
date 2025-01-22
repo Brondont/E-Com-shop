@@ -16,7 +16,7 @@ func SetupRoutes(router *mux.Router) {
 
 	// General Routes
 	router.HandleFunc("/categories", generalHandler.GetCategories).Methods("GET")
-	router.HandleFunc("/brands", generalHandler.GetBrands).Methods("GET") // Updated endpoint
+	router.HandleFunc("/brands", generalHandler.GetBrands).Methods("GET")
 	router.HandleFunc("/products", generalHandler.GetProducts).Methods("GET")
 	router.HandleFunc("/product/{productID}", generalHandler.GetProduct).Methods("GET")
 	router.HandleFunc("/variants/{productID}", generalHandler.GetVariants).Methods("GET")
@@ -35,9 +35,18 @@ func SetupRoutes(router *mux.Router) {
 	// Admin Routes
 	router.HandleFunc("/users", auth.IsAdmin(adminHandler.GetUsers)).Methods("GET")
 	router.HandleFunc("/users/{userID}", auth.IsAdmin(adminHandler.DeleteUser)).Methods("DELETE")
+
 	router.HandleFunc("/category", auth.IsAdmin(adminHandler.PostCategory)).Methods("POST")
-	router.HandleFunc("/brand", auth.IsAdmin(adminHandler.PostBrand)).Methods("POST") // Updated endpoint
+	router.HandleFunc("/category", auth.IsAdmin(adminHandler.PutCategory)).Methods("PUT")
+	router.HandleFunc("/category/{categoryID}", auth.IsAdmin(adminHandler.DeleteCategory)).Methods("DELETE")
+
+	router.HandleFunc("/brand", auth.IsAdmin(adminHandler.PostBrand)).Methods("POST")
+	router.HandleFunc("/brand", auth.IsAdmin(adminHandler.PutBrand)).Methods("PUT")
+	router.HandleFunc("/brand/{brandID}", auth.IsAdmin(adminHandler.DeleteBrand)).Methods("DELETE")
+
 	router.HandleFunc("/product", auth.IsAdmin(adminHandler.PostProduct)).Methods("POST")
+	router.HandleFunc("/product", auth.IsAuth(adminHandler.PutProduct)).Methods("PUT")
+	router.HandleFunc("/product/{productID}", auth.IsAdmin(adminHandler.DeleteProduct)).Methods("DELETE")
 
 	router.HandleFunc("/variant", auth.IsAdmin(adminHandler.PostVariant)).Methods("POST")
 	router.HandleFunc("/variant/{variantID}", auth.IsAdmin(adminHandler.DeleteVariant)).Methods("DELETE")

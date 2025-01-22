@@ -1,7 +1,7 @@
 // brandCard.tsx
 import React from "react";
 import BaseCard from "../baseCard/BaseCard";
-import { Brand } from "../../admin/products/BaseProductCreation";
+import { Brand } from "../../admin/productGroup/GroupBrand";
 
 interface BrandCardProps {
   brand?: Brand;

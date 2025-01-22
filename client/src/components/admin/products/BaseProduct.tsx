@@ -11,12 +11,13 @@ import { useFeedback } from "../../../FeedbackAlertContext";
 import VariantCreationDialog, {
   DialogProductVariantProps,
 } from "./VariantCreationDialog";
-import VariantsTable, { Image, VariantData } from "./VariantsTable";
+import VariantsTable, { VariantData } from "./VariantsTable";
+import { Image } from "../../types/types";
+import { Brand } from "../productGroup/GroupBrand";
+import { Category } from "../productGroup/GroupCategory";
 import BaseProductSearch from "./BaseProductSearch";
 import BaseProductCreation, {
   BaseProductCreationData,
-  Category,
-  Brand,
 } from "./BaseProductCreation";
 
 export interface BaseProductData {
@@ -52,12 +53,15 @@ const BaseProduct: React.FC = () => {
       existingModel: "",
     });
   const [submittingVariant, setSubmittingVariant] = useState<boolean>(false);
+  const [isEditingBaseProduct, setIsEditingBaseProduct] =
+    useState<boolean>(false);
 
   const [newBaseProduct, setNewBaseProduct] = useState<BaseProductCreationData>(
     {
       name: "",
       description: "",
-      image: null,
+      newImage: null,
+      oldImage: null,
       categoryID: undefined,
       brandID: undefined,
     }
@@ -68,6 +72,34 @@ const BaseProduct: React.FC = () => {
   const { showFeedback } = useFeedback();
   const apiUrl = process.env.REACT_APP_API_URL;
   const token = localStorage.getItem("token");
+
+  const handleStartEditing = () => {
+    if (!selectedBaseProduct) {
+      showFeedback("Select a base product first to edit it.", false);
+      return;
+    }
+    setNewBaseProduct({
+      name: selectedBaseProduct.name,
+      description: selectedBaseProduct.description,
+      newImage: null,
+      oldImage: selectedBaseProduct.image,
+      categoryID: selectedBaseProduct.category?.ID,
+      brandID: selectedBaseProduct.brand?.ID,
+    });
+    setIsEditingBaseProduct(true);
+  };
+
+  const handleCancelEditing = () => {
+    setIsEditingBaseProduct(false);
+    setNewBaseProduct({
+      name: "",
+      description: "",
+      newImage: null,
+      oldImage: null,
+      categoryID: undefined,
+      brandID: undefined,
+    });
+  };
 
   const handleOpenDialog = () => {
     if (!selectedBaseProduct) {
@@ -193,7 +225,8 @@ const BaseProduct: React.FC = () => {
     if (newBaseProduct.description === "") return "Description is required.";
     if (!newBaseProduct.categoryID) return "Category is required";
     if (!newBaseProduct.brandID) return "Brand is required";
-    if (!newBaseProduct.image) return "Image is required";
+    if (!newBaseProduct.oldImage && !newBaseProduct.newImage)
+      return "Image is required";
     return "";
   };
 
@@ -209,15 +242,19 @@ const BaseProduct: React.FC = () => {
 
     const formData = new FormData();
 
+    if (isEditingBaseProduct) {
+      formData.append("productID", selectedBaseProduct.ID.toString());
+    }
     formData.append("name", newBaseProduct.name);
     formData.append("description", newBaseProduct.description);
     formData.append("categoryID", newBaseProduct.categoryID.toString());
     formData.append("brandID", newBaseProduct.brandID.toString());
-    formData.append("image", newBaseProduct.image);
+    formData.append("existingImage", newBaseProduct.oldImage.ID.toString());
+    formData.append("image", newBaseProduct.newImage);
 
     try {
       const res = await fetch(`${apiUrl}/product`, {
-        method: "POST",
+        method: isEditingBaseProduct ? "PUT" : "POST",
         body: formData,
         headers: {
           Authorization: "Bearer " + token,
@@ -230,8 +267,32 @@ const BaseProduct: React.FC = () => {
         throw resData.error;
       }
 
-      setBaseProducts((prev) => [...prev, resData.product]);
-      showFeedback("Base product created successfully!", true);
+      if (isEditingBaseProduct) {
+        setBaseProducts((prev) =>
+          prev.map((baseProduct) => {
+            return baseProduct.ID === resData.product.ID
+              ? resData.product
+              : baseProduct;
+          })
+        );
+      } else setBaseProducts((prev) => [...prev, resData.product]);
+
+      setNewBaseProduct({
+        name: "",
+        description: "",
+        newImage: null,
+        oldImage: null,
+        categoryID: undefined,
+        brandID: undefined,
+      });
+      showFeedback(
+        isEditingBaseProduct
+          ? "Base product updated successfully!"
+          : "Base product created successfully",
+        true
+      );
+      setSelectedBaseProduct(null);
+      setIsEditingBaseProduct(false);
     } catch (err) {
       if (err.msg) showFeedback(err.msg, false);
       else
@@ -246,6 +307,15 @@ const BaseProduct: React.FC = () => {
 
   const handleUpdateSelectedBaseProduct = (baseProduct: BaseProductData) => {
     setSelectedBaseProduct(baseProduct);
+    setIsEditingBaseProduct(false);
+    setNewBaseProduct({
+      name: "",
+      description: "",
+      newImage: null,
+      oldImage: null,
+      categoryID: undefined,
+      brandID: undefined,
+    });
     fetchVariants(baseProduct.ID);
   };
 
@@ -300,22 +370,31 @@ const BaseProduct: React.FC = () => {
             p: 4,
           }}
         >
-          <Typography variant="h5">Base Product</Typography>
+          <Typography variant="h4">Base Product</Typography>
           <BaseProductSearch
             baseProducts={baseProducts}
             loadingBaseProducts={loadingBaseProducts}
             handleUpdateSelectedBaseProduct={handleUpdateSelectedBaseProduct}
             selectedBaseProduct={selectedBaseProduct}
           />
-          <Button variant="contained" onClick={handleOpenDialog}>
-            Create Product Variant
-          </Button>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button variant="contained" onClick={handleOpenDialog}>
+              Create Product Variant
+            </Button>
+            {selectedBaseProduct && !isEditingBaseProduct && (
+              <Button variant="outlined" onClick={handleStartEditing}>
+                Edit Base Product
+              </Button>
+            )}
+          </Box>
           <Divider />
           <BaseProductCreation
             newBaseProduct={newBaseProduct}
             setNewBaseProduct={setNewBaseProduct}
             submittingNewBaseProduct={submittingNewBaseProduct}
             handleSubmitNewBaseProduct={handleSubmittingNewBaseProduct}
+            isEditingBaseProduct={isEditingBaseProduct}
+            handleCancelEditing={handleCancelEditing}
           />
         </CardContent>
       </Card>

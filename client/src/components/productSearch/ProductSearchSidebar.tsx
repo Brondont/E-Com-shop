@@ -12,7 +12,8 @@ import {
   IconButton,
 } from "@mui/material";
 import { Filters } from "./types";
-import { Category, Brand } from "../admin/products/BaseProductCreation";
+import { Category } from "../admin/productGroup/GroupCategory";
+import { Brand } from "../admin/productGroup/GroupBrand";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 

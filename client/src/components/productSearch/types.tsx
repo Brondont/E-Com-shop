@@ -1,6 +1,3 @@
-import { Brand, Category } from "../admin/products/BaseProductCreation";
-
-// src/components/ProductSearch/types.ts
 export interface Product {
   id: number;
   name: string;

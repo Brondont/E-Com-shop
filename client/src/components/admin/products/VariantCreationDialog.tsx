@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import { Image } from "./VariantsTable";
+import { Image } from "../../types/types";
 import ReactQuill from "react-quill";
 import Scene from "../../modelViewer/ModelViewer";
 
@@ -114,7 +114,11 @@ const VariantCreationDialog: React.FC<VariantCreationDialogProps> = ({
   };
 
   return (
-    <Dialog open={variantDialogData.isOpen} onClose={handleCloseDialog}>
+    <Dialog
+      fullWidth
+      open={variantDialogData.isOpen}
+      onClose={handleCloseDialog}
+    >
       <DialogTitle>{editMode ? "Edit Variant" : "Add New Variant"}</DialogTitle>
       <DialogContent
         sx={{ display: "flex", flexDirection: "column", gap: 4, p: 4 }}

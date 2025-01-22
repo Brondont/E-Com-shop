@@ -106,9 +106,7 @@ const VariantManagement: React.FC = () => {
               width: "100%",
             }}
           >
-            <Box>
-              <Typography variant="h4">Variants</Typography>
-            </Box>
+            <Typography variant="h4">Variants</Typography>
             <BaseProductSearch
               baseProducts={baseProducts}
               loadingBaseProducts={loadingBaseProducts}
